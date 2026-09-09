@@ -1,0 +1,126 @@
+---
+interface Props {
+  slug: string;
+  name: string;
+  price: number;
+  compareAtPrice?: number | null;
+  currency: string;
+  image: string;
+  inStock: boolean;
+}
+
+const { slug, name, price, compareAtPrice, currency, image, inStock } = Astro.props;
+
+const formatted = new Intl.NumberFormat('en-KE').format(price);
+const formattedCompare = compareAtPrice
+  ? new Intl.NumberFormat('en-KE').format(compareAtPrice)
+  : null;
+---
+
+<article class="product-card">
+  <a href={`/products/${slug}`} class="product-media">
+    <img src={image} alt={name} loading="lazy" width="400" height="400" />
+    {!inStock && <span class="stock-flag">Out of stock</span>}
+    <span class="price-tag">
+      {currency} {formatted}
+    </span>
+  </a>
+  <div class="product-body">
+    <h3><a href={`/products/${slug}`}>{name}</a></h3>
+    <p class="price-row">
+      <span class="price">{currency} {formatted}</span>
+      {formattedCompare && <span class="compare-price">{currency} {formattedCompare}</span>}
+    </p>
+    <button
+      class="btn btn-primary add-to-cart"
+      data-slug={slug}
+      data-name={name}
+      data-price={price}
+      data-image={image}
+      disabled={!inStock}
+    >
+      {inStock ? 'Add to Cart' : 'Notify Me'}
+    </button>
+  </div>
+</article>
+
+<style>
+  .product-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .product-media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: var(--color-bg);
+  }
+  .product-media img { width: 100%; height: 100%; object-fit: cover; }
+
+  .price-tag {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    background: var(--color-accent);
+    color: var(--color-primary-dark);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 5px 12px 5px 10px;
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);
+  }
+
+  .stock-flag {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: var(--color-rust);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+  }
+
+  .product-body {
+    padding: 14px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .product-body h3 {
+    font-size: 1rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0;
+  }
+  .price { font-weight: 700; color: var(--color-primary-dark); }
+  .compare-price {
+    text-decoration: line-through;
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+  }
+
+  .add-to-cart {
+    margin-top: auto;
+    width: 100%;
+  }
+  .add-to-cart:disabled {
+    background: var(--color-line);
+    color: var(--color-ink-soft);
+    cursor: not-allowed;
+  }
+</style>

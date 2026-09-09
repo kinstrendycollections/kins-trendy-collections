@@ -1,0 +1,76 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import products from '../../data/products.json';
+
+export function getStaticPaths() {
+  const categories = [...new Set(products.map((p) => p.category))];
+  return categories.map((cat) => ({
+    params: { cat },
+    props: { cat },
+  }));
+}
+
+const { cat } = Astro.props;
+const items = products.filter((p) => p.category === cat);
+
+const categoryLabels = {
+  utensils: 'Kitchen Utensils',
+};
+const label = categoryLabels[cat] ?? cat;
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `${label} — Kins Trendy Collections`,
+  description: `Shop ${label.toLowerCase()} online in Kenya with delivery across Nairobi. M-Pesa and cash on delivery accepted.`,
+};
+---
+
+<Layout
+  title={label}
+  description={`Buy ${label.toLowerCase()} online in Kenya. Quality kitchen products delivered across Nairobi with M-Pesa or cash on delivery.`}
+  structuredData={structuredData}
+>
+  <div class="container category-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Home</a> / <span>{label}</span>
+    </nav>
+    <h1>{label}</h1>
+    <p class="result-count">{items.length} products</p>
+
+    <div class="product-grid">
+      {items.map((p) => (
+        <ProductCard
+          slug={p.slug}
+          name={p.name}
+          price={p.price}
+          compareAtPrice={p.compareAtPrice}
+          currency={p.currency}
+          image={p.images[0]}
+          inStock={p.inStock}
+        />
+      ))}
+    </div>
+  </div>
+
+  <script>
+    import '../../scripts/cart.js';
+  </script>
+</Layout>
+
+<style>
+  .category-page { padding: 32px 20px 64px; }
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 16px;
+  }
+  .breadcrumb a { color: var(--color-primary); }
+  .result-count { color: var(--color-ink-soft); margin-bottom: 24px; }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+</style>

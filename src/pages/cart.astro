@@ -1,0 +1,187 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Your Cart"
+  description="Review your Kins Trendy Collections order before checkout."
+  noindex={true}
+>
+  <section class="container cart-page">
+    <h1>Your Cart</h1>
+    <div id="cart-empty" class="cart-empty" hidden>
+      <p>Your cart is empty.</p>
+      <a href="/category/utensils" class="btn btn-accent">Browse Utensils</a>
+    </div>
+
+    <div id="cart-items" class="cart-items"></div>
+
+    <div id="cart-summary" class="cart-summary" hidden>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="cart-total">KES 0</span>
+      </div>
+
+      <fieldset class="payment-choice">
+        <legend>Payment method</legend>
+        <label>
+          <input type="radio" name="payment" value="mpesa" checked />
+          Pay with M-Pesa
+        </label>
+        <label>
+          <input type="radio" name="payment" value="cod" />
+          Cash on delivery
+        </label>
+      </fieldset>
+
+      <button id="checkout-btn" class="btn btn-primary checkout-btn">
+        Proceed to Checkout
+      </button>
+      <p class="checkout-note">
+        Checkout and M-Pesa payment are being wired up next — for now this
+        confirms your cart contents so we can finish the ordering flow.
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { getCart, updateQty, removeFromCart, cartTotal } from '../scripts/cart.js';
+
+    function render() {
+      const cart = getCart();
+      const itemsEl = document.getElementById('cart-items');
+      const emptyEl = document.getElementById('cart-empty');
+      const summaryEl = document.getElementById('cart-summary');
+      const totalEl = document.getElementById('cart-total');
+
+      if (cart.length === 0) {
+        itemsEl.innerHTML = '';
+        emptyEl.hidden = false;
+        summaryEl.hidden = true;
+        return;
+      }
+
+      emptyEl.hidden = true;
+      summaryEl.hidden = false;
+
+      itemsEl.innerHTML = cart
+        .map(
+          (item) => `
+        <div class="cart-item" data-slug="${item.slug}">
+          <img src="${item.image}" alt="${item.name}" width="80" height="80" />
+          <div class="cart-item-info">
+            <p class="name">${item.name}</p>
+            <p class="unit-price">KES ${new Intl.NumberFormat('en-KE').format(item.price)} each</p>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn" data-action="decrease">−</button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" data-action="increase">+</button>
+          </div>
+          <p class="line-total">KES ${new Intl.NumberFormat('en-KE').format(item.price * item.qty)}</p>
+          <button class="remove-btn" data-action="remove" aria-label="Remove ${item.name}">✕</button>
+        </div>
+      `
+        )
+        .join('');
+
+      totalEl.textContent = `KES ${new Intl.NumberFormat('en-KE').format(cartTotal(cart))}`;
+    }
+
+    document.getElementById('cart-items').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const row = btn.closest('.cart-item');
+      const slug = row.dataset.slug;
+      const cart = getCart();
+      const item = cart.find((c) => c.slug === slug);
+      if (!item) return;
+
+      if (btn.dataset.action === 'increase') updateQty(slug, item.qty + 1);
+      if (btn.dataset.action === 'decrease') updateQty(slug, item.qty - 1);
+      if (btn.dataset.action === 'remove') removeFromCart(slug);
+
+      render();
+    });
+
+    document.getElementById('checkout-btn')?.addEventListener('click', () => {
+      const method = document.querySelector('input[name="payment"]:checked').value;
+      alert(
+        method === 'mpesa'
+          ? 'M-Pesa checkout is coming next — this button will trigger the Daraja payment prompt.'
+          : 'Cash on delivery checkout is coming next — this button will confirm your order for delivery.'
+      );
+    });
+
+    window.addEventListener('ktc-cart-updated', render);
+    render();
+  </script>
+</Layout>
+
+<style>
+  .cart-page { padding: 40px 20px 64px; max-width: 760px; margin: 0 auto; }
+  .cart-empty {
+    text-align: center;
+    padding: 48px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: 60px 1fr auto auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .cart-item img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius); }
+  .cart-item-info .name { font-weight: 600; margin: 0; }
+  .cart-item-info .unit-price { color: var(--color-ink-soft); font-size: 0.85rem; margin: 0; }
+
+  .qty-controls { display: flex; align-items: center; gap: 10px; }
+  .qty-btn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .line-total { font-weight: 700; white-space: nowrap; }
+  .remove-btn {
+    border: none;
+    background: none;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .cart-summary { margin-top: 28px; padding-top: 20px; }
+  .summary-row.total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  .payment-choice {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .payment-choice legend { padding: 0 6px; color: var(--color-ink-soft); font-size: 0.85rem; }
+  .payment-choice label { display: block; margin: 6px 0; cursor: pointer; }
+
+  .checkout-btn { width: 100%; padding: 14px; font-size: 1rem; }
+  .checkout-note { color: var(--color-ink-soft); font-size: 0.82rem; margin-top: 12px; }
+
+  @media (max-width: 560px) {
+    .cart-item { grid-template-columns: 50px 1fr; row-gap: 8px; }
+    .qty-controls, .line-total, .remove-btn { grid-column: 2; }
+  }
+</style>

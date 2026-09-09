@@ -1,0 +1,9 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Knife set illustration">
+  <rect width="400" height="400" fill="#FAF7F0"/>
+  
+      <rect x="80" y="180" width="240" height="110" rx="6" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <path d="M110 180 L150 90 L165 90 L145 180 Z" fill="#1B4B66"/>
+      <path d="M180 180 L205 110 L220 112 L200 180 Z" fill="#1B4B66"/>
+      <path d="M250 180 L265 130 L280 133 L268 180 Z" fill="#E8A33D"/>
+    
+</svg>

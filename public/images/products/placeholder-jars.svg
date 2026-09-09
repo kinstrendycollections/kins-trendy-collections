@@ -1,0 +1,11 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Storage jars illustration">
+  <rect width="400" height="400" fill="#FAF7F0"/>
+  
+      <rect x="90" y="150" width="60" height="120" rx="8" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <rect x="100" y="130" width="40" height="24" rx="4" fill="#E8A33D"/>
+      <rect x="180" y="120" width="70" height="150" rx="8" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <rect x="192" y="98" width="46" height="26" rx="4" fill="#E8A33D"/>
+      <rect x="280" y="160" width="55" height="110" rx="8" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <rect x="289" y="140" width="37" height="24" rx="4" fill="#E8A33D"/>
+    
+</svg>

@@ -1,0 +1,11 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cutlery set illustration">
+  <rect width="400" height="400" fill="#FAF7F0"/>
+  
+      <line x1="120" y1="90" x2="120" y2="310" stroke="#1B4B66" stroke-width="6"/>
+      <path d="M100 90 L100 140 Q120 160 140 140 L140 90" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <line x1="200" y1="90" x2="200" y2="310" stroke="#1B4B66" stroke-width="6"/>
+      <ellipse cx="200" cy="115" rx="20" ry="28" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <path d="M280 90 L280 310" stroke="#1B4B66" stroke-width="6"/>
+      <path d="M270 90 L290 90 L280 150 Z" fill="#E8A33D"/>
+    
+</svg>

@@ -1,0 +1,11 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Enamel pot set illustration">
+  <rect width="400" height="400" fill="#FAF7F0"/>
+  
+      <circle cx="130" cy="230" r="55" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <rect x="75" y="230" width="110" height="60" rx="6" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <circle cx="250" cy="200" r="70" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <rect x="180" y="200" width="140" height="80" rx="6" fill="none" stroke="#1B4B66" stroke-width="6"/>
+      <circle cx="130" cy="120" r="4" fill="#E8A33D"/>
+      <circle cx="250" cy="90" r="4" fill="#E8A33D"/>
+    
+</svg>

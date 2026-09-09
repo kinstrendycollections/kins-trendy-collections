@@ -1,0 +1,132 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import products from '../data/products.json';
+
+const featured = products.slice(0, 6);
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Store',
+  name: 'Kins Trendy Collections',
+  description:
+    'Online store selling quality kitchen utensils with delivery across Nairobi and East Africa, plus M-Pesa and cash-on-delivery payment options.',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Nairobi',
+    addressCountry: 'KE',
+  },
+  priceRange: 'KES 500 - KES 5000',
+};
+---
+
+<Layout
+  title="Kins Trendy Collections"
+  description="Shop quality kitchen utensils online in Kenya — pots, pans, cutlery, plates and storage. Pay with M-Pesa or cash on delivery, delivered across Nairobi."
+  structuredData={structuredData}
+>
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <h1>Kitchen essentials, sold the way your market stall would sell them — with delivery to your door.</h1>
+        <p>
+          From sufurias to storage jars, Kins Trendy Collections stocks the everyday
+          kitchen items East African households rely on. Order online, pay by
+          M-Pesa or cash on delivery.
+        </p>
+        <div class="hero-actions">
+          <a href="/category/utensils" class="btn btn-accent">Shop Utensils</a>
+          <a href="#featured" class="btn btn-outline">See What's New</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="160" cy="180" r="95" fill="none" stroke="#1B4B66" stroke-width="8"/>
+          <rect x="65" y="180" width="190" height="100" rx="10" fill="none" stroke="#1B4B66" stroke-width="8"/>
+          <circle cx="160" cy="70" r="6" fill="#E8A33D"/>
+          <circle cx="120" cy="90" r="4" fill="#E8A33D"/>
+          <circle cx="200" cy="90" r="4" fill="#E8A33D"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="featured" class="container featured-section">
+    <h2>Popular right now</h2>
+    <div class="product-grid">
+      {featured.map((p) => (
+        <ProductCard
+          slug={p.slug}
+          name={p.name}
+          price={p.price}
+          compareAtPrice={p.compareAtPrice}
+          currency={p.currency}
+          image={p.images[0]}
+          inStock={p.inStock}
+        />
+      ))}
+    </div>
+  </section>
+
+  <section class="container trust-strip">
+    <div>
+      <h3>Pay your way</h3>
+      <p>M-Pesa at checkout, or pay cash when your order arrives.</p>
+    </div>
+    <div>
+      <h3>Nairobi &amp; beyond</h3>
+      <p>Same-week delivery in Nairobi, upcountry via courier partners.</p>
+    </div>
+    <div>
+      <h3>Growing every month</h3>
+      <p>Utensils today — clothes, shoes, electricals and hardware coming next.</p>
+    </div>
+  </section>
+
+  <script>
+    import '../scripts/cart.js';
+  </script>
+</Layout>
+
+<style>
+  .hero {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .hero-inner {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    align-items: center;
+    gap: 40px;
+    padding: 56px 20px;
+  }
+  .hero-copy p {
+    color: var(--color-ink-soft);
+    margin-bottom: 28px;
+  }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-art svg { width: 100%; height: auto; max-width: 320px; margin: 0 auto; }
+
+  .featured-section { padding: 56px 20px; }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  .trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding: 0 20px 64px;
+  }
+  .trust-strip h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .trust-strip p { color: var(--color-ink-soft); font-size: 0.92rem; margin: 0; }
+
+  @media (max-width: 800px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-art { order: -1; max-width: 220px; margin: 0 auto; }
+    .trust-strip { grid-template-columns: 1fr; }
+  }
+</style>

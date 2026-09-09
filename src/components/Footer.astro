@@ -1,0 +1,83 @@
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <h3>Kins Trendy Collections</h3>
+      <p>
+        Quality kitchen utensils delivered across Nairobi and beyond,
+        with cash-on-delivery and M-Pesa payment options. Growing into
+        clothes, shoes, electricals and hardware.
+      </p>
+    </div>
+
+    <div>
+      <h4>Shop</h4>
+      <ul>
+        <li><a href="/category/utensils">Kitchen Utensils</a></li>
+        <li><a href="/cart">My Cart</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4>Customer Care</h4>
+      <ul>
+        <li><a href="/delivery">Delivery Areas &amp; Times</a></li>
+        <li><a href="/returns">Returns Policy</a></li>
+        <li><a href="/contact">Contact Us</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4>Pay Your Way</h4>
+      <ul class="payment-list">
+        <li>M-Pesa</li>
+        <li>Cash on Delivery</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>&copy; {new Date().getFullYear()} Kins Trendy Collections. All rights reserved. Nairobi, Kenya.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--color-primary-dark);
+    color: rgba(255,255,255,0.85);
+    margin-top: 60px;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 32px;
+    padding: 48px 20px 24px;
+  }
+  .footer-grid h3 {
+    color: #fff;
+    font-size: 1.15rem;
+  }
+  .footer-grid h4 {
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    text-transform: none;
+    margin-bottom: 12px;
+  }
+  .footer-grid p { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+  .footer-grid ul { list-style: none; padding: 0; margin: 0; }
+  .footer-grid li { margin-bottom: 8px; font-size: 0.9rem; }
+  .footer-grid a { color: rgba(255,255,255,0.75); }
+  .footer-grid a:hover { color: var(--color-accent); }
+  .payment-list li { color: rgba(255,255,255,0.75); }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding: 16px 20px;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+  }
+
+  @media (max-width: 700px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
