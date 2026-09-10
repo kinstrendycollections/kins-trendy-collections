@@ -8,7 +8,7 @@ export default defineConfig({
   name: 'default',
   title: 'Kins Trendy Collections',
 
-  projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
+  projectId: '4mi66dqh',
   dataset: 'production',
 
   plugins: [structureTool()],
