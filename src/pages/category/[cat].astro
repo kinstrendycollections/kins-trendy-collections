@@ -1,21 +1,26 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ProductCard from '../../components/ProductCard.astro';
-import products from '../../data/products.json';
+import { fetchProducts } from '../../lib/products.js';
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  const products = await fetchProducts();
   const categories = [...new Set(products.map((p) => p.category))];
   return categories.map((cat) => ({
     params: { cat },
-    props: { cat },
+    props: { cat, products },
   }));
 }
 
-const { cat } = Astro.props;
+const { cat, products } = Astro.props;
 const items = products.filter((p) => p.category === cat);
 
 const categoryLabels = {
   utensils: 'Kitchen Utensils',
+  clothes: 'Clothes',
+  shoes: 'Shoes',
+  electricals: 'Electricals',
+  hardware: 'Hardware',
 };
 const label = categoryLabels[cat] ?? cat;
 
