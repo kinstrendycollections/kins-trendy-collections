@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ProductCard from '../components/ProductCard.astro';
-import products from '../data/products.json';
+import { fetchProducts } from '../lib/products.js';
 
+const products = await fetchProducts();
 const featured = products.slice(0, 6);
 
 const structuredData = {
