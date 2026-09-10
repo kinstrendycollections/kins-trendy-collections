@@ -1,18 +1,19 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ProductCard from '../../components/ProductCard.astro';
-import products from '../../data/products.json';
+import { fetchProducts } from '../../lib/products.js';
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  const products = await fetchProducts();
   return products.map((p) => ({
     params: { slug: p.slug },
-    props: { product: p },
+    props: { product: p, allProducts: products },
   }));
 }
 
-const { product } = Astro.props;
+const { product, allProducts } = Astro.props;
 
-const related = products
+const related = allProducts
   .filter((p) => p.category === product.category && p.slug !== product.slug)
   .slice(0, 4);
 
