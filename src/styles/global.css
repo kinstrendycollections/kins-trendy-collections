@@ -19,8 +19,8 @@
   --color-line: #DAD3C2;
 
   /* type */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+   --font-display: 'Newsreader', Georgia, serif; 
+   --font-body: 'Karla', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* layout */
   --max-width: 1180px;
