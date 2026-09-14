@@ -3,6 +3,7 @@
 An online store for kitchen utensils in Kenya, built to grow into clothes,
 shoes, electricals and hardware over time.
 
+
 ## What's in this project
 
 - Homepage, category pages, and individual product pages — all with SEO
