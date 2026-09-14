@@ -9,4 +9,4 @@ export default defineConfig({
   site: SITE_URL,
   integrations: [sitemap()],
   output: 'static',
-});
+}); 
