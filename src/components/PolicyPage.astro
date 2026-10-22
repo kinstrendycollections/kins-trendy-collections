@@ -1,0 +1,39 @@
+---
+// Shared page shell for plain-text pages such as Delivery and Returns.
+import Layout from '../layouts/Layout.astro';
+import { hasWhatsApp, whatsappLink } from '../lib/site.js';
+
+interface Props {
+  title: string;
+  heading: string;
+  description: string;
+}
+
+const { title, heading, description } = Astro.props;
+const waHref = whatsappLink('Hi Kins Trendy Collections, I have a question.');
+---
+
+<Layout title={title} description={description}>
+  <section class="container policy-page">
+    <h1>{heading}</h1>
+    <slot />
+    {hasWhatsApp && (
+      <p class="policy-cta">
+        <a class="btn btn-accent" href={waHref} target="_blank" rel="noopener noreferrer">
+          Questions? Chat with us on WhatsApp
+        </a>
+      </p>
+    )}
+  </section>
+</Layout>
+
+<style>
+  .policy-page { padding: 40px 20px 64px; max-width: 760px; }
+  .policy-page :global(h2) { font-size: 1.3rem; margin: 32px 0 8px; }
+  .policy-page :global(p),
+  .policy-page :global(li) { color: var(--color-ink-soft); line-height: 1.65; }
+  .policy-page :global(ol),
+  .policy-page :global(ul) { padding-left: 22px; margin: 8px 0 16px; }
+  .policy-page :global(a:not(.btn)) { color: var(--color-primary); font-weight: 600; }
+  .policy-cta { margin-top: 36px; }
+</style>
