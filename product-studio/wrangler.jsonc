@@ -1,1 +1,16 @@
+{
+  "name": "kins-product-studio",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "SANITY_PROJECT_ID": "4mi66dqh",
+    "SANITY_DATASET": "production",
+    "GEMINI_MODEL": "gemini-2.5-flash",
+    "SITE_URL": "https://kinstrendycollections.co.ke"
+  }
+}
 
