@@ -58,9 +58,16 @@ const formattedCompare = compareAtPrice
     position: relative;
     display: block;
     aspect-ratio: 1 / 1;
+    overflow: hidden;
     background: var(--color-bg);
   }
-  .product-media img { width: 100%; height: 100%; object-fit: cover; }
+  .product-media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
   .price-tag {
     position: absolute;
@@ -99,6 +106,8 @@ const formattedCompare = compareAtPrice
     font-weight: 600;
     color: var(--color-ink);
     margin: 0;
+    line-height: 1.3;
+    min-height: 2.6em; /* room for two lines, so prices line up across cards */
   }
 
   .price-row {
