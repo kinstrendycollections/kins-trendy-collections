@@ -108,25 +108,44 @@ async function handleGenerate(request, env) {
   const parts = [{ text: buildPrompt({ category, notes }) }];
   for (const p of parsed) parts.push({ inline_data: { mime_type: p.mime, data: p.base64 } });
 
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: RESPONSE_SCHEMA,
-        temperature: 0.4,
-      },
-    }),
+  // Try the main model twice, then a backup model twice. 503 and 429 usually
+  // mean "busy right now", so a short wait and retry normally fixes it.
+  const models = [env.GEMINI_MODEL || 'gemini-3.8-flash', env.GEMINI_FALLBACK_MODEL || 'gemini-3.6-flash'];
+  const requestBody = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: RESPONSE_SCHEMA,
+      temperature: 0.4,
+    },
   });
+
+  let res;
+  for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+        body: requestBody,
+      });
+      if (res.ok || ![429, 500, 503].includes(res.status)) break;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    if (res.ok || ![404, 429, 500, 503].includes(res.status)) break;
+  }
 
   if (!res.ok) {
     const detail = await res.text();
-    return json({ error: `The AI service returned an error (${res.status}).`, detail: detail.slice(0, 400) }, 502);
+    let reason = '';
+    try { reason = JSON.parse(detail).error.message || ''; } catch {}
+    return json(
+      {
+        error: `The AI service returned an error (${res.status}). ${reason.slice(0, 160)}`.trim(),
+        detail: detail.slice(0, 400),
+      },
+      502
+    );
   }
 
   const data = await res.json();
@@ -280,4 +299,3 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
-
