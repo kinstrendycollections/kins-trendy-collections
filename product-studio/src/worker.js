@@ -273,8 +273,19 @@ async function handlePublish(request, env) {
       return json({ error: `Sanity refused the product (${res.status}).`, detail: detail.slice(0, 300) }, 502);
     }
 
+    // Ask Cloudflare to rebuild the storefront so the product goes live.
+    let rebuild = 'skipped';
+    if (env.DEPLOY_HOOK_URL) {
+      try {
+        const hook = await fetch(env.DEPLOY_HOOK_URL, { method: 'POST' });
+        rebuild = hook.ok ? 'started' : 'failed';
+      } catch {
+        rebuild = 'failed';
+      }
+    }
+
     const site = (env.SITE_URL || '').replace(/\/$/, '');
-    return json({ ok: true, slug, url: `${site}/products/${slug}` });
+    return json({ ok: true, slug, url: `${site}/products/${slug}`, rebuild });
   } catch (err) {
     return json({ error: err.message || 'Publishing failed.' }, 502);
   }
