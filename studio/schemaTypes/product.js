@@ -26,10 +26,15 @@ export default defineType({
       options: {
         list: [
           {title: 'Utensils', value: 'utensils'},
+          {title: "Ladies' Shoes", value: 'ladies-shoes'},
+          {title: "Men's Shoes", value: 'mens-shoes'},
+          {title: 'Gumboots & Work Boots', value: 'gumboots'},
           {title: 'Clothes', value: 'clothes'},
-          {title: 'Shoes', value: 'shoes'},
           {title: 'Electricals', value: 'electricals'},
           {title: 'Hardware', value: 'hardware'},
+          // Old option, kept only so earlier shoe products stay visible.
+          // Move them to Ladies' or Men's Shoes, then this line can be deleted.
+          {title: 'Shoes (OLD - please change)', value: 'shoes'},
         ],
       },
       validation: (Rule) => Rule.required(),

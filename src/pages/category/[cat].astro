@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { fetchProducts } from '../../lib/products.js';
+import { categoryLabel, categoryGroup, liveCategories } from '../../lib/categories.js';
 
 export async function getStaticPaths() {
   const products = await fetchProducts();
@@ -15,14 +16,13 @@ export async function getStaticPaths() {
 const { cat, products } = Astro.props;
 const items = products.filter((p) => p.category === cat);
 
-const categoryLabels = {
-  utensils: 'Kitchen Utensils',
-  clothes: 'Clothes',
-  shoes: 'Shoes',
-  electricals: 'Electricals',
-  hardware: 'Hardware',
-};
-const label = categoryLabels[cat] ?? cat;
+const label = categoryLabel(cat);
+
+// Other live categories in the same group (e.g. Men's Shoes <-> Ladies' Shoes <-> Gumboots)
+const group = categoryGroup(cat);
+const related = group
+  ? liveCategories(products).filter((c) => c.group === group && c.slug !== cat)
+  : [];
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -34,7 +34,7 @@ const structuredData = {
 
 <Layout
   title={label}
-  description={`Buy ${label.toLowerCase()} online in Kenya. Quality kitchen products delivered across Nairobi with M-Pesa or cash on delivery.`}
+  description={`Buy ${label.toLowerCase()} online in Kenya. Delivered across Nairobi and East Africa, pay with M-Pesa or cash on delivery.`}
   structuredData={structuredData}
 >
   <div class="container category-page">
@@ -42,7 +42,15 @@ const structuredData = {
       <a href="/">Home</a> / <span>{label}</span>
     </nav>
     <h1>{label}</h1>
-    <p class="result-count">{items.length} products</p>
+    <p class="result-count">{items.length} {items.length === 1 ? 'product' : 'products'}</p>
+    {related.length > 0 && (
+      <p class="also-in">
+        Also in {group}:
+        {related.map((c, i) => (
+          <>{i > 0 ? ' · ' : ' '}<a href={`/category/${c.slug}`}>{c.label}</a></>
+        ))}
+      </p>
+    )}
 
     <div class="product-grid">
       {items.map((p) => (
@@ -72,7 +80,9 @@ const structuredData = {
     margin-bottom: 16px;
   }
   .breadcrumb a { color: var(--color-primary); }
-  .result-count { color: var(--color-ink-soft); margin-bottom: 24px; }
+  .result-count { color: var(--color-ink-soft); margin-bottom: 12px; }
+  .also-in { color: var(--color-ink-soft); font-size: 0.9rem; margin-bottom: 24px; }
+  .also-in a { color: var(--color-primary); font-weight: 600; }
   .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

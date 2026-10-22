@@ -1,13 +1,18 @@
 ---
-const categories = [
-  { name: 'Kitchen Utensils', slug: 'utensils' },
-];
+import { fetchProducts } from '../lib/products.js';
+import { CATEGORIES, liveCategories } from '../lib/categories.js';
+import { hasPhone, phoneDisplay, phoneTelHref } from '../lib/site.js';
+
+const products = await fetchProducts();
+const categories = liveCategories(products);
+const moreComing = categories.length < CATEGORIES.length;
 ---
 
 <div class="utility-bar">
   <div class="container utility-inner">
     <span>Pay on delivery available across Nairobi</span>
     <span>M-Pesa accepted at checkout</span>
+    {hasPhone && <a href={phoneTelHref} class="utility-phone">Call {phoneDisplay}</a>}
   </div>
 </div>
 
@@ -45,9 +50,9 @@ const categories = [
     <div class="container">
       <ul>
         {categories.map((c) => (
-          <li><a href={`/category/${c.slug}`}>{c.name}</a></li>
+          <li><a href={`/category/${c.slug}`}>{c.label}</a></li>
         ))}
-        <li class="coming-soon">Clothes, shoes &amp; electricals — coming soon</li>
+        {moreComing && <li class="coming-soon">More categories coming soon</li>}
       </ul>
     </div>
   </nav>
@@ -66,6 +71,8 @@ const categories = [
     padding: 7px 20px;
     flex-wrap: wrap;
   }
+
+  .utility-phone { color: #fff; font-weight: 600; }
 
   .site-header {
     background: var(--color-surface);

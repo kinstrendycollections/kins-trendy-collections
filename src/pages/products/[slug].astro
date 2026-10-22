@@ -2,6 +2,8 @@
 import Layout from '../../layouts/Layout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { fetchProducts } from '../../lib/products.js';
+import { categoryLabel } from '../../lib/categories.js';
+import { hasWhatsApp, whatsappLink } from '../../lib/site.js';
 
 export async function getStaticPaths() {
   const products = await fetchProducts();
@@ -38,6 +40,10 @@ const structuredData = {
   },
 };
 
+const productUrl = new URL(`/products/${product.slug}`, Astro.site).toString();
+const waMessage = `Hi Kins Trendy Collections, I'd like to order: ${product.name} (KES ${formatted}). ${productUrl}`;
+const waHref = whatsappLink(waMessage);
+
 const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDescription} Pay with M-Pesa or cash on delivery, delivered across Nairobi and East Africa.`;
 ---
 
@@ -46,10 +52,11 @@ const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDesc
   description={seoDescription}
   image={product.images[0]}
   structuredData={structuredData}
+  whatsappMessage={`Hi Kins Trendy Collections, I have a question about: ${product.name}. ${productUrl}`}
 >
   <nav class="container breadcrumb" aria-label="Breadcrumb">
     <a href="/">Home</a> <span>/</span>
-    <a href={`/category/${product.category}`}>{product.category}</a> <span>/</span>
+    <a href={`/category/${product.category}`}>{categoryLabel(product.category)}</a> <span>/</span>
     <span>{product.name}</span>
   </nav>
 
@@ -92,6 +99,11 @@ const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDesc
       >
         {product.inStock ? 'Add to Cart' : 'Notify Me When Back'}
       </button>
+      {hasWhatsApp && (
+        <a class="btn btn-outline wa-order" href={waHref} target="_blank" rel="noopener noreferrer">
+          Order on WhatsApp
+        </a>
+      )}
 
       <ul class="fulfillment-notes">
         <li>Pay with M-Pesa at checkout, or cash on delivery</li>
@@ -212,6 +224,7 @@ const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDesc
   }
 
   .add-to-cart { padding: 14px 32px; font-size: 1rem; }
+  .wa-order { padding: 14px 24px; font-size: 1rem; margin-left: 10px; }
   .add-to-cart:disabled {
     background: var(--color-line);
     color: var(--color-ink-soft);

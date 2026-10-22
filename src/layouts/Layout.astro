@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import WhatsAppButton from '../components/WhatsAppButton.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   image?: string;
   structuredData?: Record<string, any>;
   noindex?: boolean;
+  whatsappMessage?: string;
 }
 
 const {
@@ -17,6 +19,7 @@ const {
   image = '/images/og-default.svg',
   structuredData,
   noindex = false,
+  whatsappMessage,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -51,10 +54,11 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(image, Astro.site)} />
 
-    <!-- Fonts: Fraunces (display) + Work Sans (body) -->
+    <!-- Fonts: Newsreader (headings) + Karla (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap"
     />
 
@@ -68,5 +72,6 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
       <slot />
     </main>
     <Footer />
+    <WhatsAppButton message={whatsappMessage} />
   </body>
 </html>

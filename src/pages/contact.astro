@@ -1,0 +1,93 @@
+---
+import Layout from '../layouts/Layout.astro';
+import {
+  SITE,
+  hasPhone,
+  hasWhatsApp,
+  hasAnyContact,
+  phoneDisplay,
+  phoneTelHref,
+  whatsappLink,
+} from '../lib/site.js';
+
+const email = SITE.email.trim();
+const hours = SITE.hours.trim();
+const waHref = whatsappLink('Hi Kins Trendy Collections, I have a question about an order.');
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contact Kins Trendy Collections',
+  url: new URL('/contact', Astro.site).toString(),
+};
+---
+
+<Layout
+  title="Contact Us"
+  description="Contact Kins Trendy Collections in Kenya. Call, WhatsApp or email us about products, orders and delivery across Nairobi and Kenya."
+  structuredData={structuredData}
+  noindex={!hasAnyContact}
+>
+  <section class="container contact-page">
+    <h1>Contact Us</h1>
+    <p class="lead">
+      Questions about a product, your order or delivery? Reach us any of these ways.
+    </p>
+
+    {hasAnyContact ? (
+      <div class="contact-grid">
+        {hasWhatsApp && (
+          <div class="contact-card">
+            <h2>WhatsApp</h2>
+            <p>The fastest way to ask about a product or place an order.</p>
+            <a class="btn btn-accent" href={waHref} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
+          </div>
+        )}
+        {hasPhone && (
+          <div class="contact-card">
+            <h2>Call us</h2>
+            <p><a href={phoneTelHref}>{phoneDisplay}</a></p>
+          </div>
+        )}
+        {email && (
+          <div class="contact-card">
+            <h2>Email</h2>
+            <p><a href={`mailto:${email}`}>{email}</a></p>
+          </div>
+        )}
+        {hours && (
+          <div class="contact-card">
+            <h2>Opening hours</h2>
+            <p>{hours}</p>
+          </div>
+        )}
+        <div class="contact-card">
+          <h2>Where we deliver</h2>
+          <p>{SITE.serviceArea}. Pay with M-Pesa or cash on delivery.</p>
+        </div>
+      </div>
+    ) : (
+      <p>Our contact details are coming soon.</p>
+    )}
+  </section>
+
+</Layout>
+
+<style>
+  .contact-page { padding: 40px 20px 64px; max-width: 860px; }
+  .lead { color: var(--color-ink-soft); margin-bottom: 28px; }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .contact-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .contact-card h2 { font-size: 1.15rem; margin-bottom: 8px; }
+  .contact-card p { margin: 0 0 12px; color: var(--color-ink-soft); }
+  .contact-card a:not(.btn) { color: var(--color-primary); font-weight: 600; }
+</style>

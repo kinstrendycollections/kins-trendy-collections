@@ -26,7 +26,16 @@ const PRODUCT_QUERY = `*[_type == "product"]{
   "images": images[].asset->url
 }`;
 
-export async function fetchProducts() {
+// The header and footer also need the product list, so the answer is
+// remembered during a build instead of asking Sanity again for every page.
+let cached;
+
+export function fetchProducts() {
+  if (!cached) cached = loadProducts();
+  return cached;
+}
+
+async function loadProducts() {
   if (!PROJECT_ID) {
     const fallback = await import('../data/products.json');
     return fallback.default;

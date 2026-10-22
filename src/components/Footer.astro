@@ -1,18 +1,37 @@
+---
+import { fetchProducts } from '../lib/products.js';
+import { liveCategories } from '../lib/categories.js';
+import {
+  SITE,
+  hasPhone,
+  hasWhatsApp,
+  phoneDisplay,
+  phoneTelHref,
+  whatsappLink,
+} from '../lib/site.js';
+
+const products = await fetchProducts();
+const categories = liveCategories(products);
+const email = SITE.email.trim();
+const hours = SITE.hours.trim();
+const hasContactLines = hasPhone || hasWhatsApp || email || hours;
+---
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
       <h3>Kins Trendy Collections</h3>
       <p>
-        Quality kitchen utensils delivered across Nairobi and beyond,
-        with cash-on-delivery and M-Pesa payment options. Growing into
-        clothes, shoes, electricals and hardware.
+        Kitchen utensils, shoes and more, delivered across Nairobi and
+        beyond, with cash-on-delivery and M-Pesa payment options.
       </p>
     </div>
 
     <div>
       <h4>Shop</h4>
       <ul>
-        <li><a href="/category/utensils">Kitchen Utensils</a></li>
+        {categories.map((c) => (
+          <li><a href={`/category/${c.slug}`}>{c.label}</a></li>
+        ))}
         <li><a href="/cart">My Cart</a></li>
       </ul>
     </div>
@@ -24,6 +43,20 @@
         <li><a href="/returns">Returns Policy</a></li>
         <li><a href="/contact">Contact Us</a></li>
       </ul>
+      {hasContactLines && (
+        <ul class="contact-lines">
+          {hasPhone && <li><a href={phoneTelHref}>Call {phoneDisplay}</a></li>}
+          {hasWhatsApp && (
+            <li>
+              <a href={whatsappLink('Hi Kins Trendy Collections, I have a question.')} target="_blank" rel="noopener noreferrer">
+                WhatsApp us
+              </a>
+            </li>
+          )}
+          {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
+          {hours && <li>{hours}</li>}
+        </ul>
+      )}
     </div>
 
     <div>
@@ -69,6 +102,8 @@
   .footer-grid a { color: rgba(255,255,255,0.75); }
   .footer-grid a:hover { color: var(--color-accent); }
   .payment-list li { color: rgba(255,255,255,0.75); }
+  .contact-lines { margin-top: 14px !important; padding-top: 12px !important; border-top: 1px solid rgba(255,255,255,0.12); }
+  .contact-lines li { color: rgba(255,255,255,0.75); }
 
   .footer-bottom {
     border-top: 1px solid rgba(255,255,255,0.12);
