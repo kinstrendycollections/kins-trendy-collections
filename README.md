@@ -48,3 +48,4 @@ a unique `slug` (used in the web address), `name`, `price`, `category`,
 - Set up your M-Pesa Daraja API credentials (see comments inside
   `functions/api/checkout.js`) as environment variables in Cloudflare —
   never type API keys directly into your code files.
+
