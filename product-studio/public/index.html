@@ -272,7 +272,9 @@ $('pubBtn').onclick = async () => {
     });
     const msg = $('pubMsg');
     msg.className = 'msg ok';
-    msg.textContent = 'Published! Your site is rebuilding and the product should appear in 1 to 2 minutes: ';
+    msg.textContent = out.rebuild === 'started'
+      ? 'Published! Your site is rebuilding and the product should appear in 1 to 2 minutes: '
+      : 'Saved, but the site rebuild did not start by itself. Edit README.md on GitHub to force one, then the product appears at: ';
     const a = document.createElement('a');
     a.href = out.url; a.target = '_blank'; a.rel = 'noopener';
     a.textContent = out.url;
@@ -295,4 +297,3 @@ $('backBtn').onclick = () => {
 </script>
 </body>
 </html>
-
