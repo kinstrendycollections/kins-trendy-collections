@@ -1,0 +1,23 @@
+{
+  "name": "kins-payments",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kins-orders",
+      "database_id": "6bd693b4-a4d0-447d-9851-7b3fc1f68313"
+    }
+  ],
+  "vars": {
+    "SANITY_PROJECT_ID": "4mi66dqh",
+    "SANITY_DATASET": "production",
+    "SITE_URL": "https://kinstrendycollections.co.ke",
+    "ALLOWED_ORIGINS": "https://kins-trendy-collections.kinstrendycollections.workers.dev",
+    "DARAJA_ENV": "sandbox"
+  }
+}

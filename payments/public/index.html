@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Kins Orders</title>
+  <style>
+    :root { --bg:#FAF7F0; --ink:#1d2a30; --soft:#5b6a70; --cobalt:#1B4B66; --cobalt-d:#123244; --gold:#E8A33D; --rust:#B23A2E; --sage:#4C7A56; --line:#DAD3C2; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui, sans-serif; }
+    header { background:var(--cobalt); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    header h1 { margin:0; font-size:1.1rem; }
+    main { max-width:760px; margin:0 auto; padding:16px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; }
+    input, button { font:inherit; }
+    input { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; }
+    button { padding:9px 13px; border:0; border-radius:8px; background:var(--cobalt); color:#fff; cursor:pointer; }
+    button.alt { background:#fff; color:var(--cobalt); border:1px solid var(--cobalt); }
+    button.warn { background:var(--rust); }
+    button:disabled { opacity:.5; cursor:default; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    .row input { width:130px; }
+    .top { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .num { font-weight:700; font-size:1.05rem; }
+    .muted { color:var(--soft); font-size:.88rem; }
+    .pill { display:inline-block; padding:2px 9px; border-radius:99px; font-size:.78rem; background:#eee; margin-right:4px; }
+    .pill.good { background:#dcefe0; color:#27502f; } .pill.bad { background:#f5d9d5; color:#7d241b; } .pill.wait { background:#fbecc9; color:#7a5410; }
+    ul { margin:8px 0; padding-left:18px; }
+    .msg { margin:8px 0; font-size:.9rem; }
+    .sandbox { background:var(--gold); color:#222; text-align:center; padding:6px; font-size:.85rem; }
+    [hidden] { display:none !important; }
+  </style>
+</head>
+<body>
+  <div id="sandbox" class="sandbox" hidden>TEST MODE: M-Pesa payments here use Safaricom's sandbox, so no real money moves.</div>
+  <header>
+    <h1>Kins Orders</h1>
+    <span><button id="refresh" class="alt" hidden>Refresh</button> <button id="signout" class="alt" hidden>Sign out</button></span>
+  </header>
+  <main>
+    <div id="login" class="card">
+      <p>Enter the owner password.</p>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Password" />
+      <div class="row"><button id="go">Sign in</button></div>
+      <p id="loginmsg" class="msg"></p>
+    </div>
+    <div id="orders" hidden></div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const KES = (n) => 'KES ' + new Intl.NumberFormat('en-KE').format(n);
+    let timer = null;
+
+    function key() { try { return sessionStorage.getItem('kins-admin') || ''; } catch { return ''; } }
+    function setKey(v) { try { v ? sessionStorage.setItem('kins-admin', v) : sessionStorage.removeItem('kins-admin'); } catch {} }
+
+    async function api(path, body) {
+      const res = await fetch(path, {
+        method: body ? 'POST' : 'GET',
+        headers: { 'x-admin-key': key(), ...(body ? { 'content-type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({ ok: false, error: 'Unexpected reply.' }));
+      if (res.status === 401) { signOut(); throw new Error('Wrong password.'); }
+      return data;
+    }
+
+    // Builds elements with textContent only, so customer-typed text can never run as code.
+    function el(tag, props = {}, ...kids) {
+      const e = document.createElement(tag);
+      for (const [k, v] of Object.entries(props)) {
+        if (k === 'class') e.className = v;
+        else if (k === 'onclick') e.addEventListener('click', v);
+        else e.setAttribute(k, v);
+      }
+      for (const kid of kids) if (kid !== null && kid !== undefined) e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      return e;
+    }
+
+    function payPill(o) {
+      const map = {
+        unpaid: ['M-Pesa not paid yet', 'wait'], pending: ['Waiting for customer PIN', 'wait'], paid: ['Paid by M-Pesa', 'good'],
+        failed: ['M-Pesa failed', 'bad'], review: ['CHECK AMOUNT', 'bad'], cod: ['Cash on delivery', 'wait'], cod_paid: ['Cash collected', 'good'],
+      };
+      const [text, cls] = map[o.paymentStatus] || [o.paymentStatus, ''];
+      return el('span', { class: 'pill ' + cls }, text);
+    }
+
+    function card(o) {
+      const when = new Date(o.createdAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' });
+      const msg = el('p', { class: 'msg' });
+      const feeInput = el('input', { type: 'number', min: '0', inputmode: 'numeric', placeholder: 'Delivery fee' });
+      if (o.deliveryFee !== null) feeInput.value = o.deliveryFee;
+
+      async function act(path, body, ok) {
+        msg.textContent = 'Working...';
+        try {
+          const r = await api(path, { orderNumber: o.orderNumber, ...body });
+          msg.textContent = r.ok ? (ok || 'Done.') : (r.error || 'Something went wrong.');
+          if (r.ok) setTimeout(load, 400);
+        } catch (e) { msg.textContent = e.message; }
+      }
+
+      const items = el('ul', {}, ...o.items.map((i) => el('li', {}, `${i.qty} x ${i.name}${i.size ? ' (size ' + i.size + ')' : ''} at ${KES(i.unitPrice)}`)));
+      const done = o.paymentStatus === 'paid' || o.paymentStatus === 'cod_paid';
+
+      const actions = el('div', { class: 'row' },
+        feeInput,
+        el('button', { class: 'alt', onclick: () => act('/api/admin/orders/fee', { fee: Number(feeInput.value) }, 'Fee saved.') }, 'Save fee'),
+      );
+      const actions2 = el('div', { class: 'row' });
+      if (o.paymentMethod === 'mpesa' && !done) {
+        actions2.append(el('button', { onclick: () => act('/api/admin/orders/pay', {}, 'Prompt sent to the customer\'s phone.') }, 'Send M-Pesa prompt'));
+      }
+      if (o.paymentMethod === 'cod' && !done) {
+        actions2.append(el('button', { class: 'alt', onclick: () => act('/api/admin/orders/update', { codCollected: true }, 'Marked as collected.') }, 'Cash collected'));
+      }
+      if (o.status === 'new') actions2.append(el('button', { class: 'alt', onclick: () => act('/api/admin/orders/update', { status: 'confirmed' }) }, 'Confirm order'));
+      if (o.status === 'confirmed') actions2.append(el('button', { class: 'alt', onclick: () => act('/api/admin/orders/update', { status: 'delivered' }) }, 'Mark delivered'));
+      if (o.status !== 'cancelled' && o.status !== 'delivered') actions2.append(el('button', { class: 'warn', onclick: () => { if (confirm('Cancel order ' + o.orderNumber + '?')) act('/api/admin/orders/update', { status: 'cancelled' }); } }, 'Cancel'));
+
+      const wa = 'https://wa.me/' + o.phone;
+      return el('div', { class: 'card' },
+        el('div', { class: 'top' }, el('span', { class: 'num' }, o.orderNumber), el('span', { class: 'muted' }, when)),
+        el('div', {}, el('span', { class: 'pill' }, o.status), payPill(o)),
+        el('p', {}, el('strong', {}, o.name), ' ', el('a', { href: 'tel:+' + o.phone }, '+' + o.phone), ' ', el('a', { href: wa, target: '_blank', rel: 'noopener' }, 'WhatsApp')),
+        el('p', { class: 'muted' }, `${o.address}, ${o.area}, ${o.county}`),
+        o.notes ? el('p', { class: 'muted' }, 'Note: ' + o.notes) : null,
+        items,
+        el('p', {}, `Items ${KES(o.subtotal)}`, ' | ', o.deliveryFee === null ? 'Delivery fee: not set yet' : `Delivery ${KES(o.deliveryFee)}`, ' | ', el('strong', {}, o.amountDue === null ? 'Total: set the fee first' : `Total ${KES(o.amountDue)}`)),
+        o.receipt ? el('p', { class: 'muted' }, 'M-Pesa receipt: ' + o.receipt) : null,
+        actions, actions2, msg
+      );
+    }
+
+    async function load() {
+      try {
+        const data = await api('/api/admin/orders');
+        if (!data.ok) throw new Error(data.error || 'Could not load orders.');
+        $('sandbox').hidden = data.daraja !== 'sandbox';
+        const box = $('orders');
+        box.replaceChildren();
+        if (data.orders.length === 0) box.append(el('div', { class: 'card' }, 'No orders yet.'));
+        for (const o of data.orders) box.append(card(o));
+      } catch (e) { $('orders').replaceChildren(el('div', { class: 'card' }, e.message)); }
+    }
+
+    function showApp() {
+      $('login').hidden = true; $('orders').hidden = false; $('refresh').hidden = false; $('signout').hidden = false;
+      load();
+      clearInterval(timer);
+      timer = setInterval(() => { if (!document.hidden && !document.activeElement?.matches('input')) load(); }, 30000);
+    }
+    function signOut() {
+      setKey(''); clearInterval(timer);
+      $('login').hidden = false; $('orders').hidden = true; $('refresh').hidden = true; $('signout').hidden = true; $('sandbox').hidden = true;
+    }
+
+    $('go').addEventListener('click', async () => {
+      setKey($('pw').value);
+      $('loginmsg').textContent = 'Checking...';
+      try {
+        const data = await api('/api/admin/orders');
+        if (data.ok) { $('pw').value = ''; $('loginmsg').textContent = ''; showApp(); } else { $('loginmsg').textContent = data.error || 'Could not sign in.'; setKey(''); }
+      } catch (e) { $('loginmsg').textContent = e.message; }
+    });
+    $('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('go').click(); });
+    $('refresh').addEventListener('click', load);
+    $('signout').addEventListener('click', signOut);
+    if (key()) showApp();
+  </script>
+</body>
+</html>
