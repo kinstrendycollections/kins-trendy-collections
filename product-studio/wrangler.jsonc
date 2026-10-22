@@ -9,7 +9,7 @@
   "vars": {
     "SANITY_PROJECT_ID": "4mi66dqh",
     "SANITY_DATASET": "production",
-    "GEMINI_MODEL": "gemini-2.5-flash",
+    "GEMINI_MODEL": "gemini-3.8-flash",
     "SITE_URL": "https://kinstrendycollections.co.ke"
   }
 }
