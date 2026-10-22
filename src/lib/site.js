@@ -10,7 +10,7 @@
 
 export const SITE = {
   name: 'Kins Trendy Collections',
-  phone: '',
+  phone: '0717 025 361',
   whatsapp: '',
   email: '',
   hours: '',
