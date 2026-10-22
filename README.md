@@ -49,4 +49,5 @@ a unique `slug` (used in the web address), `name`, `price`, `category`,
   `functions/api/checkout.js`) as environment variables in Cloudflare —
   never type API keys directly into your code files.
   
+  
 
