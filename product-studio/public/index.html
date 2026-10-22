@@ -1,1 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Kins Product Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600&family=Newsreader:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --ivory:#FAF6EF; --green:#24473F; --copper:#C1702D; --sand:#E8DCC5; --sage:#7C8C6B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ivory); color:#1f2a27; font-family:Karla,system-ui,sans-serif; line-height:1.5; }
+  main { max-width:640px; margin:0 auto; padding:20px 16px 80px; }
+  h1,h2 { font-family:Newsreader,Georgia,serif; color:var(--green); margin:0 0 8px; }
+  h1 { font-size:1.9rem; } h2 { font-size:1.3rem; }
+  p.sub { margin:0 0 20px; color:#4b5a55; }
+  .card { background:#fff; border:1px solid var(--sand); border-radius:14px; padding:18px; margin-bottom:16px; }
+  label { display:block; font-weight:600; margin:14px 0 4px; }
+  label small { font-weight:400; color:#5d6b66; }
+  input, select, textarea { width:100%; padding:11px 12px; border:1px solid #cdbf9f; border-radius:10px; font:inherit; background:#fff; }
+  textarea { min-height:120px; resize:vertical; }
+  .row { display:flex; gap:12px; } .row > div { flex:1; }
+  button { font:inherit; font-weight:600; border:0; border-radius:10px; padding:13px 18px; cursor:pointer; background:var(--green); color:#fff; width:100%; margin-top:16px; }
+  button.copper { background:var(--copper); }
+  button.ghost { background:transparent; color:var(--green); border:1px solid var(--green); }
+  button:disabled { opacity:.55; cursor:wait; }
+  .thumbs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+  .thumbs div { position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:var(--sand); }
+  .thumbs img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumbs button { position:absolute; top:4px; right:4px; width:26px; height:26px; padding:0; margin:0; border-radius:50%; background:rgba(0,0,0,.65); font-size:14px; line-height:26px; }
+  .msg { padding:12px 14px; border-radius:10px; margin-top:14px; display:none; }
+  .msg.err { display:block; background:#fdeaea; color:#8a1f1f; }
+  .msg.ok { display:block; background:#e7f1e4; color:#24473F; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chips span { background:var(--sand); border-radius:999px; padding:3px 10px; font-size:.85rem; }
+  .hint { font-size:.9rem; color:#5d6b66; margin-top:6px; }
+  .hidden { display:none; }
+  a { color:var(--copper); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kins Product Studio</h1>
+  <p class="sub">Photos in, product page out.</p>
+
+  <!-- Step 0: password -->
+  <section id="login" class="card">
+    <h2>Sign in</h2>
+    <label for="pw">Studio password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <button id="loginBtn">Continue</button>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <div id="app" class="hidden">
+    <!-- Step 1: photos + basics -->
+    <section class="card">
+      <h2>1. Add the product</h2>
+      <label for="files">Photos <small>(1 to 4, clear and well lit)</small></label>
+      <input id="files" type="file" accept="image/*" multiple>
+      <div id="thumbs" class="thumbs"></div>
+
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="utensils">Utensils</option>
+        <option value="clothes">Clothes</option>
+        <option value="shoes">Shoes</option>
+        <option value="electricals">Electricals</option>
+        <option value="hardware">Hardware</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label for="cost">Your cost <small>(KES)</small></label>
+          <input id="cost" type="number" inputmode="decimal" min="0" placeholder="e.g. 1800">
+        </div>
+        <div>
+          <label for="margin">Profit margin <small>(%)</small></label>
+          <input id="margin" type="number" inputmode="decimal" min="0" value="40">
+        </div>
+      </div>
+
+      <label for="notes">Anything the AI should know <small>(optional: sizes, material, brand)</small></label>
+      <textarea id="notes" style="min-height:70px" placeholder="e.g. Sizes 38 to 44, genuine leather"></textarea>
+
+      <button id="genBtn" class="copper">Generate listing</button>
+      <div id="genMsg" class="msg"></div>
+    </section>
+
+    <!-- Step 2: review and publish -->
+    <section id="review" class="card hidden">
+      <h2>2. Check and publish</h2>
+      <p class="hint">Edit anything you like. The price is a suggestion: cost plus your margin, rounded to the nearest KES 50.</p>
+
+      <label for="name">Product name</label>
+      <input id="name" maxlength="100">
+
+      <div class="row">
+        <div>
+          <label for="price">Selling price <small>(KES)</small></label>
+          <input id="price" type="number" inputmode="decimal" min="1">
+        </div>
+        <div>
+          <label for="compare">Original price <small>(optional)</small></label>
+          <input id="compare" type="number" inputmode="decimal" min="0">
+        </div>
+      </div>
+
+      <label for="short">Short description</label>
+      <input id="short" maxlength="200">
+
+      <label for="desc">Full description</label>
+      <textarea id="desc"></textarea>
+
+      <label for="sku">SKU <small>(leave empty to auto-create)</small></label>
+      <input id="sku">
+
+      <label>Search keywords <small>(for your reference)</small></label>
+      <div id="keywords" class="chips"></div>
+
+      <button id="pubBtn">Publish to the store</button>
+      <button id="backBtn" class="ghost">Start over</button>
+      <div id="pubMsg" class="msg"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let password = sessionStorage.getItem('studioPw') || '';
+let photos = []; // data URLs (resized JPEGs)
+
+function show(el, text, kind) {
+  el.className = 'msg ' + kind;
+  el.textContent = text;
+}
+function clear(el) { el.className = 'msg'; el.textContent = ''; }
+
+async function api(path, payload) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-admin-key': password },
+    body: JSON.stringify(payload || {}),
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.error || 'Something went wrong (' + res.status + ').');
+  return data;
+}
+
+// ----- login -----
+async function tryLogin() {
+  try {
+    await api('/api/ping');
+    sessionStorage.setItem('studioPw', password);
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    return true;
+  } catch (e) {
+    sessionStorage.removeItem('studioPw');
+    return e;
+  }
+}
+$('loginBtn').onclick = async () => {
+  password = $('pw').value;
+  const r = await tryLogin();
+  if (r !== true) show($('loginMsg'), r.message, 'err');
+};
+$('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
+if (password) tryLogin();
+
+// ----- photos -----
+async function resizeToDataUrl(file, maxSide = 1280) {
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.82);
+}
+
+function renderThumbs() {
+  $('thumbs').innerHTML = '';
+  photos.forEach((src, i) => {
+    const d = document.createElement('div');
+    const img = document.createElement('img');
+    img.src = src;
+    const x = document.createElement('button');
+    x.textContent = '×';
+    x.setAttribute('aria-label', 'Remove photo');
+    x.onclick = () => { photos.splice(i, 1); renderThumbs(); };
+    d.append(img, x);
+    $('thumbs').append(d);
+  });
+}
+
+$('files').onchange = async (e) => {
+  clear($('genMsg'));
+  const files = Array.from(e.target.files).slice(0, 4 - photos.length);
+  for (const f of files) {
+    try { photos.push(await resizeToDataUrl(f)); }
+    catch (err) { show($('genMsg'), 'Could not read one of the photos.', 'err'); }
+  }
+  e.target.value = '';
+  renderThumbs();
+};
+
+// ----- generate -----
+function suggestPrice(cost, marginPct) {
+  const raw = cost * (1 + marginPct / 100);
+  return Math.max(50, Math.round(raw / 50) * 50);
+}
+
+$('genBtn').onclick = async () => {
+  clear($('genMsg'));
+  const cost = Number($('cost').value);
+  const margin = Number($('margin').value);
+  if (!photos.length) return show($('genMsg'), 'Add at least one photo first.', 'err');
+  if (!(cost > 0)) return show($('genMsg'), 'Enter what the product costs you.', 'err');
+  if (!(margin >= 0)) return show($('genMsg'), 'Enter a profit margin (0 or more).', 'err');
+
+  $('genBtn').disabled = true;
+  $('genBtn').textContent = 'Reading your photos...';
+  try {
+    const { listing } = await api('/api/generate', {
+      images: photos,
+      category: $('category').value,
+      notes: $('notes').value,
+    });
+    $('name').value = listing.name;
+    $('short').value = listing.shortDescription;
+    $('desc').value = listing.description;
+    $('category').value = listing.category;
+    $('price').value = suggestPrice(cost, margin);
+    $('compare').value = '';
+    $('sku').value = '';
+    $('keywords').innerHTML = '';
+    listing.keywords.forEach((k) => {
+      const s = document.createElement('span');
+      s.textContent = k;
+      $('keywords').append(s);
+    });
+    clear($('pubMsg'));
+    $('review').classList.remove('hidden');
+    $('review').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    show($('genMsg'), err.message, 'err');
+  } finally {
+    $('genBtn').disabled = false;
+    $('genBtn').textContent = 'Generate listing';
+  }
+};
+
+// ----- publish -----
+$('pubBtn').onclick = async () => {
+  clear($('pubMsg'));
+  $('pubBtn').disabled = true;
+  $('pubBtn').textContent = 'Publishing...';
+  try {
+    const out = await api('/api/publish', {
+      images: photos,
+      name: $('name').value,
+      category: $('category').value,
+      price: $('price').value,
+      compareAtPrice: $('compare').value,
+      shortDescription: $('short').value,
+      description: $('desc').value,
+      sku: $('sku').value,
+    });
+    const msg = $('pubMsg');
+    msg.className = 'msg ok';
+    msg.textContent = 'Published! Your site is rebuilding and the product should appear in 1 to 2 minutes: ';
+    const a = document.createElement('a');
+    a.href = out.url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = out.url;
+    msg.append(a);
+  } catch (err) {
+    show($('pubMsg'), err.message, 'err');
+  } finally {
+    $('pubBtn').disabled = false;
+    $('pubBtn').textContent = 'Publish to the store';
+  }
+};
+
+$('backBtn').onclick = () => {
+  photos = []; renderThumbs();
+  ['cost','notes','name','short','desc','price','compare','sku'].forEach((id) => { $(id).value = ''; });
+  $('review').classList.add('hidden');
+  clear($('pubMsg')); clear($('genMsg'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+</script>
+</body>
+</html>
 
