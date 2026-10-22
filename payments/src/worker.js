@@ -277,6 +277,11 @@ async function fetchProducts(env, slugs) {
 async function createOrder(env, input) {
   // Cash on delivery is switched off for now. To turn it on later, add the plain
   // variable ENABLE_COD = "true" in wrangler.jsonc and commit.
+  // Spam trap: the checkout form has a hidden "website" box that people never fill in.
+  // If it has text, pretend all is well but save nothing.
+  if (input && typeof input === 'object' && clean(input.website, 100)) {
+    return json({ ok: true, orderNumber: 'KTC-000000', paymentMethod: 'mpesa', subtotal: 0, deliveryFee: null, amountDue: null, paymentStatus: 'unpaid' });
+  }
   const checked = validateOrderInput(input, { allowCod: env.ENABLE_COD === 'true' });
   if (!checked.ok) return fail(checked.error);
   const { customer, payment, items } = checked.value;

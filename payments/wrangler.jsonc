@@ -17,7 +17,7 @@
     "SANITY_PROJECT_ID": "4mi66dqh",
     "SANITY_DATASET": "production",
     "SITE_URL": "https://kinstrendycollections.co.ke",
-    "ALLOWED_ORIGINS": "https://kins-trendy-collections.kinstrendycollections.workers.dev",
+    "ALLOWED_ORIGINS": "https://kins-trendy-collections.kinstrendycollections.workers.dev,https://www.kinstrendycollections.co.ke",
     "DARAJA_ENV": "sandbox"
   }
 }

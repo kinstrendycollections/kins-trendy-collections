@@ -1,0 +1,241 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Your Order"
+  description="Check your Kins Trendy Collections order and pay with M-Pesa."
+  noindex={true}
+>
+  <section class="container order-page">
+    <h1>Your Order</h1>
+
+    <!-- Shown when we do not know the phone number for this order -->
+    <form id="lookup" class="panel" hidden novalidate>
+      <p>Enter your order number and the phone number you ordered with.</p>
+      <label>Order number
+        <input name="order" type="text" placeholder="KTC-ABC123" maxlength="20" autocomplete="off" />
+      </label>
+      <label>Phone number
+        <input name="phone" type="tel" inputmode="tel" placeholder="0712 345 678" maxlength="20" />
+      </label>
+      <p id="lookup-msg" class="msg" role="alert"></p>
+      <button type="submit" class="btn btn-primary">Find my order</button>
+    </form>
+
+    <div id="status" class="panel" hidden>
+      <p class="order-no">Order <strong id="o-number"></strong></p>
+      <h2 id="o-title"></h2>
+      <p id="o-text"></p>
+
+      <div id="o-money" class="money" hidden>
+        <div><span>Items</span><span id="m-items"></span></div>
+        <div><span>Delivery</span><span id="m-fee"></span></div>
+        <div class="grand"><span>Total to pay</span><span id="m-total"></span></div>
+      </div>
+
+      <div id="o-pay" hidden>
+        <button id="pay-btn" type="button" class="btn btn-accent pay-btn"></button>
+        <details>
+          <summary>Pay from a different M-Pesa number</summary>
+          <label>M-Pesa number
+            <input id="pay-phone" type="tel" inputmode="tel" placeholder="0712 345 678" maxlength="20" />
+          </label>
+        </details>
+      </div>
+
+      <p id="o-msg" class="msg" role="alert"></p>
+      <p><a id="o-wa" class="btn btn-outline" target="_blank" rel="noopener noreferrer" hidden>Message us on WhatsApp</a></p>
+    </div>
+  </section>
+
+  <script>
+    import { PAYMENTS_API, hasWhatsApp, whatsappLink } from '../lib/site.js';
+
+    const $ = (id) => document.getElementById(id);
+    const KES = (n) => 'KES ' + new Intl.NumberFormat('en-KE').format(n);
+    const POLL_MS = 8000;
+
+    let orderNumber = '';
+    let phone = '';
+    let timer = null;
+    let last = null;
+
+    function getPhone() { try { return sessionStorage.getItem('ktc-order-phone') || ''; } catch { return ''; } }
+    function setPhone(v) { try { sessionStorage.setItem('ktc-order-phone', v); } catch {} }
+
+    async function post(path, body) {
+      const res = await fetch(PAYMENTS_API + path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => null);
+      return { status: res.status, data: data || { ok: false, error: 'Unexpected reply from the server.' } };
+    }
+
+    function show(d) {
+      last = d;
+      $('lookup').hidden = true;
+      $('status').hidden = false;
+      $('o-number').textContent = d.orderNumber;
+
+      const hasFee = d.amountDue !== null && d.amountDue !== undefined;
+      const money = $('o-money');
+      money.hidden = !hasFee;
+      if (hasFee) {
+        $('m-items').textContent = KES(d.subtotal);
+        $('m-fee').textContent = KES(d.deliveryFee);
+        $('m-total').textContent = KES(d.amountDue);
+      }
+
+      const pay = $('o-pay');
+      const btn = $('pay-btn');
+      pay.hidden = true;
+      let title = '';
+      let text = '';
+      const ps = d.paymentStatus;
+
+      if (d.status === 'cancelled') {
+        title = 'This order was cancelled';
+        text = 'If you think this is a mistake, please message us.';
+      } else if (ps === 'paid') {
+        title = 'Payment received. Thank you!';
+        text = d.receipt ? `Your M-Pesa receipt number is ${d.receipt}.` : 'Your M-Pesa payment has been confirmed.';
+      } else if (ps === 'review') {
+        title = 'We need to check your payment';
+        text = 'We received a payment that does not match the total. Please message us with your order number and the M-Pesa message.';
+      } else if (ps === 'pending') {
+        title = 'Check your phone';
+        text = `Enter your M-Pesa PIN to pay ${KES(d.amountDue)}. This page updates by itself.`;
+      } else if (!hasFee) {
+        title = 'We have your order';
+        text = 'We are confirming your delivery fee and will message you shortly. You will pay after you see the total. This page updates by itself.';
+      } else {
+        // fee is set and nothing is paid yet (new, or the last try failed)
+        title = ps === 'failed' ? 'The payment did not go through' : 'Your total is ready';
+        text = ps === 'failed' && d.reason ? d.reason : `Tap the button to get an M-Pesa request on your phone for ${KES(d.amountDue)}.`;
+        pay.hidden = false;
+        btn.textContent = ps === 'failed' ? `Try again: pay ${KES(d.amountDue)}` : `Pay ${KES(d.amountDue)} with M-Pesa`;
+      }
+
+      $('o-title').textContent = title;
+      $('o-text').textContent = text;
+
+      if (hasWhatsApp) {
+        const wa = $('o-wa');
+        wa.href = whatsappLink(`Hi Kins Trendy Collections, my order number is ${d.orderNumber}.`);
+        wa.hidden = false;
+      }
+
+      const done = ps === 'paid' || ps === 'review' || d.status === 'cancelled';
+      clearTimeout(timer);
+      if (!done) timer = setTimeout(refresh, POLL_MS);
+    }
+
+    async function refresh(first = false) {
+      try {
+        const { status, data } = await post('/api/orders/status', { orderNumber, phone });
+        if (data.ok) {
+          $('o-msg').textContent = '';
+          show(data);
+        } else if (first || status === 404) {
+          $('status').hidden = true;
+          $('lookup').hidden = false;
+          $('lookup-msg').textContent = 'We could not find that order. Please check the order number and phone number.';
+        }
+      } catch {
+        if (!first) timer = setTimeout(refresh, POLL_MS); // network blip: try again
+      }
+    }
+
+    $('pay-btn').addEventListener('click', async () => {
+      const btn = $('pay-btn');
+      const msg = $('o-msg');
+      msg.textContent = '';
+      btn.disabled = true;
+      try {
+        const { data } = await post('/api/orders/pay', {
+          orderNumber,
+          phone,
+          mpesaPhone: $('pay-phone').value.trim(),
+        });
+        if (!data.ok) {
+          msg.textContent = data.error || 'We could not send the M-Pesa request. Please try again.';
+        } else {
+          clearTimeout(timer);
+          await refresh();
+        }
+      } catch {
+        msg.textContent = 'We could not reach the server. Check your internet and try again.';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $('lookup').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = new FormData($('lookup'));
+      orderNumber = String(f.get('order') || '').trim().toUpperCase();
+      phone = String(f.get('phone') || '').trim();
+      if (!orderNumber || !phone) {
+        $('lookup-msg').textContent = 'Please enter both the order number and the phone number.';
+        return;
+      }
+      $('lookup-msg').textContent = '';
+      setPhone(phone);
+      history.replaceState(null, '', `/order?o=${encodeURIComponent(orderNumber)}`);
+      refresh(true);
+    });
+
+    // Pause the checking while the tab is hidden, resume when it comes back.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && last && !$('status').hidden) {
+        clearTimeout(timer);
+        refresh();
+      }
+    });
+
+    orderNumber = (new URLSearchParams(location.search).get('o') || '').trim().toUpperCase();
+    phone = getPhone();
+    if (orderNumber && phone) {
+      refresh(true);
+    } else {
+      $('lookup').hidden = false;
+      if (orderNumber) $('lookup').elements['order'].value = orderNumber;
+    }
+  </script>
+</Layout>
+
+<style>
+  .order-page { padding: 40px 20px 64px; max-width: 560px; margin: 0 auto; }
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    padding: 22px;
+    display: grid;
+    gap: 14px;
+  }
+  .panel[hidden], [hidden] { display: none !important; }
+  .panel p, .panel h2 { margin: 0; }
+  .panel h2 { font-size: 1.35rem; }
+  .order-no { color: var(--color-ink-soft); }
+  label { display: grid; gap: 6px; font-size: 0.9rem; color: var(--color-ink-soft); }
+  input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    font: inherit;
+    font-size: 1rem;
+  }
+  .money { border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); padding: 10px 0; display: grid; gap: 6px; }
+  .money div { display: flex; justify-content: space-between; }
+  .money .grand { font-weight: 700; font-size: 1.15rem; }
+  .pay-btn { width: 100%; padding: 14px; font-size: 1rem; }
+  details { margin-top: 12px; font-size: 0.9rem; }
+  summary { cursor: pointer; color: var(--color-primary); }
+  details label { margin-top: 10px; }
+  .msg { color: var(--color-rust); font-weight: 600; min-height: 1.2em; }
+</style>

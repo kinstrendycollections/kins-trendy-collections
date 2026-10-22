@@ -17,6 +17,9 @@ export const SITE = {
   serviceArea: 'Nairobi and delivery across Kenya',
 };
 
+// Address of the payments and orders Worker (Cloudflare project kins-payments).
+export const PAYMENTS_API = 'https://kins-payments.kinstrendycollections.workers.dev';
+
 // Turns 0712 345 678 or +254 712 345 678 into 254712345678
 function toInternational(raw) {
   const digits = String(raw || '').replace(/\D/g, '');

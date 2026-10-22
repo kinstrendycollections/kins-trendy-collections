@@ -1,5 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const COUNTIES = [
+  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo',
+  'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale',
+  'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa',
+  "Murang'a", 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya',
+  'Taita-Taveta', 'Tana River', 'Tharaka-Nithi', 'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga',
+  'Wajir', 'West Pokot',
+];
 ---
 
 <Layout
@@ -18,34 +27,61 @@ import Layout from '../layouts/Layout.astro';
 
     <div id="cart-summary" class="cart-summary" hidden>
       <div class="summary-row total">
-        <span>Total</span>
+        <span>Items total</span>
         <span id="cart-total">KES 0</span>
       </div>
-
-      <fieldset class="payment-choice">
-        <legend>Payment method</legend>
-        <label>
-          <input type="radio" name="payment" value="mpesa" checked />
-          Pay with M-Pesa
-        </label>
-        <label>
-          <input type="radio" name="payment" value="cod" />
-          Cash on delivery
-        </label>
-      </fieldset>
-
-      <button id="checkout-btn" class="btn btn-primary checkout-btn">
-        Proceed to Checkout
-      </button>
-      <p class="checkout-note">
-        Checkout and M-Pesa payment are being wired up next — for now this
-        confirms your cart contents so we can finish the ordering flow.
+      <p class="fee-note">
+        Delivery is extra and depends on your area. We confirm the fee with you after you place the
+        order, and you pay only after you have seen the total. <a href="/delivery">Delivery details</a>
       </p>
+
+      <form id="checkout-form" class="checkout-form" novalidate>
+        <h2>Delivery details</h2>
+
+        <label>Your name
+          <input name="name" type="text" autocomplete="name" maxlength="80" required />
+        </label>
+        <label>M-Pesa phone number
+          <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" maxlength="20" required />
+        </label>
+        <label>County
+          <select name="county" autocomplete="address-level1" required>
+            <option value="">Choose your county</option>
+            {COUNTIES.map((c) => <option value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label>Town or area
+          <input name="area" type="text" autocomplete="address-level2" maxlength="80" required />
+        </label>
+        <label>Delivery address or landmark
+          <input name="address" type="text" autocomplete="street-address" maxlength="200" required />
+        </label>
+        <label>Notes (optional)
+          <input name="notes" type="text" maxlength="300" />
+        </label>
+
+        <!-- Hidden trap for spam bots. Real customers never see or fill this. -->
+        <input class="trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+        <p id="checkout-msg" class="checkout-msg" role="alert"></p>
+        <button id="checkout-btn" type="submit" class="btn btn-primary checkout-btn">Place order</button>
+        <p class="checkout-note">
+          Payment is by M-Pesa. After you place your order we confirm your delivery fee, then you pay
+          from your phone.
+        </p>
+      </form>
     </div>
   </section>
 
   <script>
-    import { getCart, updateQty, removeFromCart, cartTotal } from '../scripts/cart.js';
+    import { getCart, updateQty, removeFromCart, setSize, clearCart, cartTotal, lineKey } from '../scripts/cart.js';
+    import { categoryGroup } from '../lib/categories.js';
+    import { PAYMENTS_API } from '../lib/site.js';
+
+    const KES = (n) => new Intl.NumberFormat('en-KE').format(n);
+    const esc = (s) =>
+      String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const isShoe = (item) => categoryGroup(item.category) === 'Footwear' || item.category === 'shoes';
 
     function render() {
       const cart = getCart();
@@ -65,52 +101,127 @@ import Layout from '../layouts/Layout.astro';
       summaryEl.hidden = false;
 
       itemsEl.innerHTML = cart
-        .map(
-          (item) => `
-        <div class="cart-item" data-slug="${item.slug}">
-          <img src="${item.image}" alt="${item.name}" width="80" height="80" />
+        .map((item) => {
+          const key = lineKey(item);
+          const sizeBox = isShoe(item)
+            ? `<label class="size-label">Size
+                 <input class="size-input" data-key="${esc(key)}" type="text" inputmode="numeric"
+                        maxlength="20" placeholder="e.g. 38" value="${esc(item.size || '')}" />
+               </label>`
+            : '';
+          return `
+        <div class="cart-item" data-key="${esc(key)}">
+          <img src="${esc(item.image)}" alt="${esc(item.name)}" width="80" height="80" />
           <div class="cart-item-info">
-            <p class="name">${item.name}</p>
-            <p class="unit-price">KES ${new Intl.NumberFormat('en-KE').format(item.price)} each</p>
+            <p class="name">${esc(item.name)}</p>
+            <p class="unit-price">KES ${KES(item.price)} each</p>
+            ${sizeBox}
           </div>
           <div class="qty-controls">
-            <button class="qty-btn" data-action="decrease">−</button>
+            <button type="button" class="qty-btn" data-action="decrease" aria-label="Fewer">−</button>
             <span>${item.qty}</span>
-            <button class="qty-btn" data-action="increase">+</button>
+            <button type="button" class="qty-btn" data-action="increase" aria-label="More">+</button>
           </div>
-          <p class="line-total">KES ${new Intl.NumberFormat('en-KE').format(item.price * item.qty)}</p>
-          <button class="remove-btn" data-action="remove" aria-label="Remove ${item.name}">✕</button>
-        </div>
-      `
-        )
+          <p class="line-total">KES ${KES(item.price * item.qty)}</p>
+          <button type="button" class="remove-btn" data-action="remove" aria-label="Remove ${esc(item.name)}">✕</button>
+        </div>`;
+        })
         .join('');
 
-      totalEl.textContent = `KES ${new Intl.NumberFormat('en-KE').format(cartTotal(cart))}`;
+      totalEl.textContent = `KES ${KES(cartTotal(cart))}`;
     }
 
     document.getElementById('cart-items').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
-      const row = btn.closest('.cart-item');
-      const slug = row.dataset.slug;
-      const cart = getCart();
-      const item = cart.find((c) => c.slug === slug);
+      const key = btn.closest('.cart-item').dataset.key;
+      const item = getCart().find((c) => lineKey(c) === key);
       if (!item) return;
 
-      if (btn.dataset.action === 'increase') updateQty(slug, item.qty + 1);
-      if (btn.dataset.action === 'decrease') updateQty(slug, item.qty - 1);
-      if (btn.dataset.action === 'remove') removeFromCart(slug);
-
-      render();
+      if (btn.dataset.action === 'increase') updateQty(key, item.qty + 1);
+      if (btn.dataset.action === 'decrease') updateQty(key, item.qty - 1);
+      if (btn.dataset.action === 'remove') removeFromCart(key);
     });
 
-    document.getElementById('checkout-btn')?.addEventListener('click', () => {
-      const method = document.querySelector('input[name="payment"]:checked').value;
-      alert(
-        method === 'mpesa'
-          ? 'M-Pesa checkout is coming next — this button will trigger the Daraja payment prompt.'
-          : 'Cash on delivery checkout is coming next — this button will confirm your order for delivery.'
-      );
+    document.getElementById('cart-items').addEventListener('change', (e) => {
+      const input = e.target.closest('.size-input');
+      if (input) setSize(input.dataset.key, input.value);
+    });
+
+    // Reads the sizes straight from the boxes, in case the customer typed one
+    // and pressed "Place order" without leaving the box first.
+    function currentItems() {
+      const typed = new Map();
+      document.querySelectorAll('.size-input').forEach((i) => typed.set(i.dataset.key, i.value.trim()));
+      return getCart().map((item) => ({
+        slug: item.slug,
+        name: item.name,
+        qty: item.qty,
+        shoe: isShoe(item),
+        size: typed.has(lineKey(item)) ? typed.get(lineKey(item)) : item.size || '',
+      }));
+    }
+
+    const form = document.getElementById('checkout-form');
+    const msg = document.getElementById('checkout-msg');
+    const btn = document.getElementById('checkout-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      const items = currentItems();
+      if (items.length === 0) return;
+
+      const noSize = items.find((i) => i.shoe && !i.size);
+      if (noSize) {
+        msg.textContent = `Please enter your size for ${noSize.name}.`;
+        document.querySelector('.size-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const f = new FormData(form);
+      const customer = {
+        name: String(f.get('name') || '').trim(),
+        phone: String(f.get('phone') || '').trim(),
+        county: String(f.get('county') || '').trim(),
+        area: String(f.get('area') || '').trim(),
+        address: String(f.get('address') || '').trim(),
+        notes: String(f.get('notes') || '').trim(),
+      };
+      if (!customer.name || !customer.phone || !customer.county || !customer.area || !customer.address) {
+        msg.textContent = 'Please fill in all the delivery details.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Placing your order...';
+      try {
+        const res = await fetch(`${PAYMENTS_API}/api/orders`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            customer,
+            payment: 'mpesa',
+            website: String(f.get('website') || ''),
+            items: items.map((i) => ({ slug: i.slug, qty: i.qty, size: i.size })),
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.ok) {
+          msg.textContent = (data && data.error) || 'We could not place your order. Please try again, or message us on WhatsApp.';
+          return;
+        }
+        try {
+          sessionStorage.setItem('ktc-order-phone', customer.phone);
+        } catch {}
+        clearCart();
+        window.location.href = `/order?o=${encodeURIComponent(data.orderNumber)}`;
+      } catch {
+        msg.textContent = 'We could not reach the server. Check your internet and try again.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Place order';
+      }
     });
 
     window.addEventListener('ktc-cart-updated', render);
@@ -140,6 +251,8 @@ import Layout from '../layouts/Layout.astro';
   .cart-item img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius); }
   .cart-item-info .name { font-weight: 600; margin: 0; }
   .cart-item-info .unit-price { color: var(--color-ink-soft); font-size: 0.85rem; margin: 0; }
+  .size-label { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.85rem; color: var(--color-ink-soft); }
+  .size-input { width: 90px; padding: 6px 8px; border: 1px solid var(--color-line); border-radius: var(--radius); font: inherit; }
 
   .qty-controls { display: flex; align-items: center; gap: 10px; }
   .qty-btn {
@@ -165,20 +278,29 @@ import Layout from '../layouts/Layout.astro';
     justify-content: space-between;
     font-size: 1.2rem;
     font-weight: 700;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
+  .fee-note { color: var(--color-ink-soft); font-size: 0.9rem; margin: 0 0 24px; }
+  .fee-note a { color: var(--color-primary); font-weight: 600; }
 
-  .payment-choice {
+  .checkout-form { display: grid; gap: 14px; }
+  .checkout-form h2 { font-size: 1.2rem; margin: 0; }
+  .checkout-form label { display: grid; gap: 6px; font-size: 0.9rem; color: var(--color-ink-soft); }
+  .checkout-form input,
+  .checkout-form select {
+    width: 100%;
+    padding: 11px 12px;
     border: 1px solid var(--color-line);
     border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 20px;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 1rem;
   }
-  .payment-choice legend { padding: 0 6px; color: var(--color-ink-soft); font-size: 0.85rem; }
-  .payment-choice label { display: block; margin: 6px 0; cursor: pointer; }
-
+  .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .checkout-msg { color: var(--color-rust); font-weight: 600; margin: 0; min-height: 1.2em; }
   .checkout-btn { width: 100%; padding: 14px; font-size: 1rem; }
-  .checkout-note { color: var(--color-ink-soft); font-size: 0.82rem; margin-top: 12px; }
+  .checkout-note { color: var(--color-ink-soft); font-size: 0.82rem; margin: 0; }
 
   @media (max-width: 560px) {
     .cart-item { grid-template-columns: 50px 1fr; row-gap: 8px; }

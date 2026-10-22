@@ -48,7 +48,7 @@ const waMessage =
   (isFootwear ? '\nMy size: ' : '');
 const waHref = whatsappLink(waMessage);
 
-const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDescription} Pay with M-Pesa or cash on delivery, delivered across Kenya.`;
+const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDescription} Pay with M-Pesa, delivered across Kenya.`;
 ---
 
 <Layout
@@ -99,6 +99,7 @@ const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDesc
         data-name={product.name}
         data-price={product.price}
         data-image={product.images[0]}
+        data-category={product.category}
         disabled={!product.inStock}
       >
         {product.inStock ? 'Add to Cart' : 'Notify Me When Back'}
@@ -116,7 +117,7 @@ const seoDescription = `Buy ${product.name} online in Kenya. ${product.shortDesc
       )}
 
       <ul class="fulfillment-notes">
-        <li>Pay with M-Pesa at checkout, or cash on delivery</li>
+        <li>Pay with M-Pesa once we confirm your delivery fee</li>
         <li>Delivery across Kenya. Fee confirmed when you order. <a href="/delivery">Delivery details</a></li>
         <li>SKU: {product.sku}</li>
       </ul>
