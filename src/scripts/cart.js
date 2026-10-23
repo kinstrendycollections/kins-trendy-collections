@@ -28,6 +28,7 @@ export function addToCart(item) {
   const existing = cart.find((c) => lineKey(c) === lineKey(item));
   if (existing) {
     existing.qty += 1;
+    if (!existing.category && item.category) existing.category = item.category; // repairs older cart lines
   } else {
     cart.push({ ...item, qty: 1 });
   }
@@ -63,6 +64,14 @@ export function setSize(key, size) {
     twin.qty += line.qty;
     cart.splice(cart.indexOf(line), 1);
   }
+  saveCart(cart);
+}
+
+// The server told us these items need a size (for example a shoe added before
+// the cart knew about categories). Remember that so the size box shows.
+export function markNeedsSize(slugs) {
+  const cart = getCart();
+  for (const line of cart) if (slugs.includes(line.slug)) line.needsSize = true;
   saveCart(cart);
 }
 

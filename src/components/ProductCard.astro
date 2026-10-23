@@ -7,9 +7,10 @@ interface Props {
   currency: string;
   image: string;
   inStock: boolean;
+  category?: string;
 }
 
-const { slug, name, price, compareAtPrice, currency, image, inStock } = Astro.props;
+const { slug, name, price, compareAtPrice, currency, image, inStock, category = '' } = Astro.props;
 
 const formatted = new Intl.NumberFormat('en-KE').format(price);
 const formattedCompare = compareAtPrice
@@ -37,6 +38,7 @@ const formattedCompare = compareAtPrice
       data-name={name}
       data-price={price}
       data-image={image}
+      data-category={category}
       disabled={!inStock}
     >
       {inStock ? 'Add to Cart' : 'Notify Me'}

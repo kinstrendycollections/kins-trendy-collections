@@ -295,14 +295,18 @@ async function createOrder(env, input) {
   const bySlug = new Map(products.map((p) => [p.slug, p]));
 
   const lines = [];
+  const needSize = [];
   for (const item of items) {
     const p = bySlug.get(item.slug);
     if (!p) return fail('One of the items in your cart is no longer available. Please remove it and try again.');
     if (p.inStock === false) return fail(`${p.name} is out of stock.`);
     const price = Math.round(Number(p.price));
     if (!Number.isFinite(price) || price <= 0) return fail(`${p.name} cannot be ordered right now.`);
-    if (isFootwear(p.category) && !item.size) return fail(`Please choose a size for ${p.name}.`);
+    if (isFootwear(p.category) && !item.size) needSize.push({ slug: item.slug, name: p.name });
     lines.push({ slug: item.slug, name: p.name, category: p.category || '', unit_price: price, qty: item.qty, size: item.size || null });
+  }
+  if (needSize.length > 0) {
+    return json({ ok: false, error: `Please choose a size for ${needSize[0].name}.`, needSize: needSize.map((n) => n.slug) }, 400);
   }
   const subtotal = lines.reduce((sum, l) => sum + l.unit_price * l.qty, 0);
   const paymentStatus = payment === 'cod' ? 'cod' : 'unpaid';
