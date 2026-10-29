@@ -110,9 +110,16 @@ async function handleGenerate(request, env) {
   const parts = [{ text: buildPrompt({ category, notes }) }];
   for (const p of parsed) parts.push({ inline_data: { mime_type: p.mime, data: p.base64 } });
 
-  // Try the main model twice, then a backup model twice. 503 and 429 usually
-  // mean "busy right now", so a short wait and retry normally fixes it.
-  const models = [env.GEMINI_MODEL || 'gemini-3.8-flash', env.GEMINI_FALLBACK_MODEL || 'gemini-3.6-flash'];
+  // Try the main model, then backups. Google counts quota per model, so when one
+  // model says 429 ("quota used up") the next model may still have room.
+  // 500 and 503 mean "busy right now", so those get one short retry per model.
+  const models = [
+    ...new Set([
+      env.GEMINI_MODEL || 'gemini-3.8-flash',
+      env.GEMINI_FALLBACK_MODEL || 'gemini-3.6-flash',
+      'gemini-3.5-flash-lite',
+    ]),
+  ];
   const requestBody = JSON.stringify({
     contents: [{ role: 'user', parts }],
     generationConfig: {
@@ -131,7 +138,7 @@ async function handleGenerate(request, env) {
         headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
         body: requestBody,
       });
-      if (res.ok || ![429, 500, 503].includes(res.status)) break;
+      if (res.ok || ![500, 503].includes(res.status)) break;
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
     if (res.ok || ![404, 429, 500, 503].includes(res.status)) break;
@@ -141,6 +148,17 @@ async function handleGenerate(request, env) {
     const detail = await res.text();
     let reason = '';
     try { reason = JSON.parse(detail).error.message || ''; } catch {}
+    if (res.status === 429) {
+      return json(
+        {
+          error:
+            'The AI quota for your Google key is used up (error 429). Google resets daily quotas around 10 to 11 in the morning Nairobi time. ' +
+            'You can wait, switch on billing for the key in Google AI Studio, or tap "Skip the AI" and write the listing yourself.',
+          detail: detail.slice(0, 400),
+        },
+        429
+      );
+    }
     return json(
       {
         error: `The AI service returned an error (${res.status}). ${reason.slice(0, 160)}`.trim(),

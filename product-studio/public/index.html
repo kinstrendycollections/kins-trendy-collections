@@ -65,10 +65,14 @@
       <label for="files">Photos <small>(1 to 4, clear and well lit)</small></label>
       <input id="files" type="file" accept="image/*" multiple>
       <label class="check" for="autoClean">
-        <input id="autoClean" type="checkbox" checked>
-        <span>Remove photo backgrounds <small>(white background, done on your phone, free)</small></span>
+        <input id="autoClean" type="checkbox">
+        <span>Clean new photos automatically <small>(white background; it can be slow, so by default you choose when)</small></span>
       </label>
       <div id="thumbs" class="thumbs"></div>
+      <div id="bgButtons" class="hidden">
+        <button id="cleanAllBtn" type="button" class="ghost">Remove backgrounds</button>
+        <button id="stopCleanBtn" type="button" class="ghost hidden">Stop cleaning</button>
+      </div>
       <p id="bgStatus" class="hint"></p>
 
       <label for="category">Category</label>
@@ -98,6 +102,7 @@
       <textarea id="notes" style="min-height:70px" placeholder="e.g. Sizes 38 to 44, genuine leather"></textarea>
 
       <button id="genBtn" class="copper">Generate listing</button>
+      <button id="manualBtn" type="button" class="ghost">Skip the AI, I'll write it myself</button>
       <div id="genMsg" class="msg"></div>
     </section>
 
@@ -227,8 +232,10 @@ async function loadRemover() {
   throw err;
 }
 
+let lastBgProgress = 0;
 function onBgProgress(key, current, total) {
   if (total > 0 && String(key).startsWith('fetch')) {
+    lastBgProgress = Date.now();
     setBgStatus('Downloading the cleaning tool, first time only (' + Math.round((100 * current) / total) + '%). Keep this page open.');
   }
 }
@@ -287,23 +294,35 @@ async function composeOnWhite(blob, size = 1200) {
 }
 
 let cleaning = false;
+let cleanEpoch = 0; // bumped by "Stop cleaning" so an old run quietly gives up
 async function runCleanQueue() {
   if (cleaning) return;
   cleaning = true;
+  const epoch = cleanEpoch;
   let failures = 0, successes = 0, lastError = '';
   try {
     for (;;) {
+      if (epoch !== cleanEpoch) return;
       const p = photos.find((x) => x.status === 'queued');
       if (!p) break;
       p.status = 'working';
       renderThumbs();
-      setBgStatus('Cleaning photo... this can take 10 to 40 seconds each.');
+      const started = Date.now();
+      setBgStatus('Cleaning photo... 0 seconds. The first time is the slowest.');
+      const tick = setInterval(() => {
+        if (Date.now() - lastBgProgress > 2000) {
+          setBgStatus('Cleaning photo... ' + Math.round((Date.now() - started) / 1000) + ' seconds. Keep this page open.');
+        }
+      }, 1000);
       try {
-        p.clean = await composeOnWhite(await cutOut(p.orig));
+        const clean = await composeOnWhite(await cutOut(p.orig));
+        if (epoch !== cleanEpoch) return;
+        p.clean = clean;
         p.useClean = true;
         p.status = 'done';
         successes++;
       } catch (err) {
+        if (epoch !== cleanEpoch) return;
         console.error('Background removal failed:', err);
         p.status = 'failed';
         p.useClean = false;
@@ -312,11 +331,13 @@ async function runCleanQueue() {
         if (err && err.isLoadError) {
           photos.filter((x) => x.status === 'queued').forEach((x) => { x.status = 'failed'; failures++; });
         }
+      } finally {
+        clearInterval(tick);
       }
       renderThumbs();
     }
   } finally {
-    cleaning = false;
+    if (epoch === cleanEpoch) cleaning = false;
   }
   if (failures) {
     setBgStatus('Could not clean ' + failures + ' photo' + (failures > 1 ? 's' : '') + ': ' + lastError + '. The original photo will be used. Tap Retry to try again.');
@@ -358,7 +379,32 @@ function renderThumbs() {
     }
     $('thumbs').append(d);
   });
+
+  // Buttons under the photos: clean them all, or stop.
+  const busy = stillCleaning();
+  const todo = photos.some((p) => !p.clean && p.status !== 'queued' && p.status !== 'working');
+  $('bgButtons').classList.toggle('hidden', !photos.length || (!busy && !todo));
+  $('stopCleanBtn').classList.toggle('hidden', !busy);
+  $('cleanAllBtn').classList.toggle('hidden', busy || !todo);
 }
+
+$('cleanAllBtn').onclick = () => {
+  photos.forEach((p) => {
+    if (!p.clean && p.status !== 'queued' && p.status !== 'working') p.status = 'queued';
+  });
+  renderThumbs();
+  runCleanQueue();
+};
+
+$('stopCleanBtn').onclick = () => {
+  cleanEpoch++;
+  cleaning = false;
+  photos.forEach((p) => {
+    if (p.status === 'queued' || p.status === 'working') p.status = 'idle';
+  });
+  setBgStatus('Stopped. Your original photos will be used. Tap Remove backgrounds to try again.');
+  renderThumbs();
+};
 
 $('files').onchange = async (e) => {
   clear($('genMsg'));
@@ -382,14 +428,38 @@ function suggestPrice(cost, marginPct) {
   return Math.max(50, Math.round(raw / 50) * 50);
 }
 
-$('genBtn').onclick = async () => {
+// Shared checks before Generate or "write it myself".
+function checkInputs() {
   clear($('genMsg'));
   const cost = Number($('cost').value);
   const margin = Number($('margin').value);
-  if (!photos.length) return show($('genMsg'), 'Add at least one photo first.', 'err');
-  if (stillCleaning()) return show($('genMsg'), 'Your photos are still being cleaned. Please wait until they finish.', 'err');
-  if (!(cost > 0)) return show($('genMsg'), 'Enter what the product costs you.', 'err');
-  if (!(margin >= 0)) return show($('genMsg'), 'Enter a profit margin (0 or more).', 'err');
+  const fail = (text) => { show($('genMsg'), text, 'err'); return null; };
+  if (!photos.length) return fail('Add at least one photo first.');
+  if (stillCleaning()) return fail('Your photos are still being cleaned. Wait for them to finish, or tap "Stop cleaning" to use the original photos.');
+  if (!(cost > 0)) return fail('Enter what the product costs you.');
+  if (!(margin >= 0)) return fail('Enter a profit margin (0 or more).');
+  return { cost, margin };
+}
+
+// For when the AI is unavailable (for example its daily quota is used up).
+$('manualBtn').onclick = () => {
+  const v = checkInputs();
+  if (!v) return;
+  if ($('review').classList.contains('hidden')) {
+    ['name', 'short', 'desc', 'sku', 'compare'].forEach((id) => { $(id).value = ''; });
+    $('keywords').innerHTML = '';
+  }
+  $('price').value = suggestPrice(v.cost, v.margin);
+  clear($('pubMsg'));
+  $('review').classList.remove('hidden');
+  $('review').scrollIntoView({ behavior: 'smooth' });
+  $('name').focus();
+};
+
+$('genBtn').onclick = async () => {
+  const v = checkInputs();
+  if (!v) return;
+  const { cost, margin } = v;
 
   $('genBtn').disabled = true;
   $('genBtn').textContent = 'Reading your photos...';
