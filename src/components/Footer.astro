@@ -1,6 +1,6 @@
 ---
 import { fetchProducts } from '../lib/products.js';
-import { liveCategories } from '../lib/categories.js';
+import { menuCategories } from '../lib/categories.js';
 import {
   SITE,
   hasPhone,
@@ -11,7 +11,7 @@ import {
 } from '../lib/site.js';
 
 const products = await fetchProducts();
-const categories = liveCategories(products);
+const categories = menuCategories(products);
 const email = SITE.email.trim();
 const hours = SITE.hours.trim();
 const hasContactLines = hasPhone || hasWhatsApp || email || hours;

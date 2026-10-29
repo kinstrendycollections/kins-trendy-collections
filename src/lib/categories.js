@@ -5,13 +5,16 @@
 // slug  = what is saved on the product and used in the web address
 // label = what shoppers see
 // group = used to link related categories together (e.g. all footwear)
+// open  = true: shown in the menu and given a page even before it has
+//         products (the page says "products coming soon"). Categories
+//         without open: true appear only once they have a product.
 
 export const CATEGORIES = [
-  { slug: 'utensils', label: 'Kitchen Utensils', group: 'Home & Kitchen' },
-  { slug: 'ladies-shoes', label: "Ladies' Shoes", group: 'Footwear' },
-  { slug: 'mens-shoes', label: "Men's Shoes", group: 'Footwear' },
-  { slug: 'school-shoes', label: 'School Shoes', group: 'Footwear' },
-  { slug: 'gumboots', label: 'Gumboots & Safety Boots', group: 'Footwear' },
+  { slug: 'utensils', label: 'Kitchen Utensils', group: 'Home & Kitchen', open: true },
+  { slug: 'ladies-shoes', label: "Ladies' Shoes", group: 'Footwear', open: true },
+  { slug: 'mens-shoes', label: "Men's Shoes", group: 'Footwear', open: true },
+  { slug: 'school-shoes', label: 'School Shoes', group: 'Footwear', open: true },
+  { slug: 'gumboots', label: 'Gumboots & Safety Boots', group: 'Footwear', open: true },
   { slug: 'clothes', label: 'Clothes', group: 'Clothing' },
   { slug: 'electricals', label: 'Electricals', group: 'Electricals' },
   { slug: 'hardware', label: 'Hardware', group: 'Hardware' },
@@ -39,4 +42,11 @@ export function categoryGroup(slug) {
 export function liveCategories(products) {
   const used = new Set(products.map((p) => p.category));
   return CATEGORIES.filter((c) => used.has(c.slug));
+}
+
+// Categories shown in the menu and footer: the open ones plus any other
+// category that already has products.
+export function menuCategories(products) {
+  const used = new Set(products.map((p) => p.category));
+  return CATEGORIES.filter((c) => c.open || used.has(c.slug));
 }

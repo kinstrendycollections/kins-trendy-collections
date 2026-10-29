@@ -1,12 +1,18 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import { hasWhatsApp, whatsappLink } from '../../lib/site.js';
 import { fetchProducts } from '../../lib/products.js';
-import { categoryLabel, categoryGroup, liveCategories } from '../../lib/categories.js';
+import { CATEGORIES, categoryLabel, categoryGroup, menuCategories } from '../../lib/categories.js';
 
 export async function getStaticPaths() {
   const products = await fetchProducts();
-  const categories = [...new Set(products.map((p) => p.category))];
+  const categories = [
+    ...new Set([
+      ...products.map((p) => p.category),
+      ...CATEGORIES.filter((c) => c.open).map((c) => c.slug),
+    ]),
+  ];
   return categories.map((cat) => ({
     params: { cat },
     props: { cat, products },
@@ -21,7 +27,7 @@ const label = categoryLabel(cat);
 // Other live categories in the same group (e.g. Men's Shoes <-> Ladies' Shoes <-> Gumboots)
 const group = categoryGroup(cat);
 const related = group
-  ? liveCategories(products).filter((c) => c.group === group && c.slug !== cat)
+  ? menuCategories(products).filter((c) => c.group === group && c.slug !== cat)
   : [];
 
 const structuredData = {
@@ -36,6 +42,7 @@ const structuredData = {
   title={label}
   description={`Buy ${label.toLowerCase()} online in Kenya. Delivered across Kenya, pay with M-Pesa.`}
   structuredData={structuredData}
+  noindex={items.length === 0}
 >
   <div class="container category-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -50,6 +57,17 @@ const structuredData = {
           <>{i > 0 ? ' · ' : ' '}<a href={`/category/${c.slug}`}>{c.label}</a></>
         ))}
       </p>
+    )}
+
+    {items.length === 0 && (
+      <div class="empty-state">
+        <p>We are adding {label.toLowerCase()} to the shop. Check back soon.</p>
+        {hasWhatsApp && (
+          <a class="btn btn-accent" href={whatsappLink(`Hi Kins Trendy Collections, do you have ${label.toLowerCase()} available?`)} target="_blank" rel="noopener noreferrer">
+            Ask us on WhatsApp
+          </a>
+        )}
+      </div>
     )}
 
     <div class="product-grid">
@@ -83,6 +101,8 @@ const structuredData = {
   .breadcrumb a { color: var(--color-primary); }
   .result-count { color: var(--color-ink-soft); margin-bottom: 12px; }
   .also-in { color: var(--color-ink-soft); font-size: 0.9rem; margin-bottom: 24px; }
+  .empty-state { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius); padding: 28px 20px; margin-bottom: 24px; }
+  .empty-state p { color: var(--color-ink-soft); margin: 0 0 14px; }
   .also-in a { color: var(--color-primary); font-weight: 600; }
   .product-grid {
     display: grid;
