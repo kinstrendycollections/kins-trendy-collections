@@ -7,7 +7,7 @@
 // Secrets (set in the Cloudflare dashboard, never in this file):
 //   ADMIN_PASSWORD, GEMINI_API_KEY, SANITY_WRITE_TOKEN
 
-const CATEGORIES = ['utensils', 'ladies-shoes', 'mens-shoes', 'gumboots', 'clothes', 'electricals', 'hardware'];
+const CATEGORIES = ['utensils', 'ladies-shoes', 'mens-shoes', 'school-shoes', 'gumboots', 'clothes', 'electricals', 'hardware'];
 const SANITY_API = 'v2024-01-01';
 const MAX_IMAGES = 4;
 
@@ -73,7 +73,7 @@ function buildPrompt({ category, notes }) {
     '- description: 70 to 130 words. A short opening paragraph, then a few lines on features and uses.',
     '- keywords: 6 to 10 short search phrases a Kenyan shopper might type.',
     '- category: one of ' + CATEGORIES.join(', ') + '.',
-    '  Use ladies-shoes for women\'s footwear, mens-shoes for men\'s footwear, and gumboots for gumboots, wellingtons and rubber or safety work boots (any gender).',
+    '  Use ladies-shoes for women\'s footwear, mens-shoes for men\'s footwear, school-shoes for school uniform shoes for boys and girls (black or brown leather or synthetic school shoes, school sandals, school sneakers), and gumboots for gumboots, wellingtons and rubber or safety work boots (any gender).',
     '- For footwear, name the style (flats, sandals, sneakers, heels, boots) and colour. Never guess the size; only mention sizes if the owner notes give them.',
     category ? '- The owner says the category is: ' + category + '. Use it unless the photos clearly show otherwise.' : '',
     notes ? '\nOwner notes (trust these over the photos): ' + notes : '',

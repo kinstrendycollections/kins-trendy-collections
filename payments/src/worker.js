@@ -31,7 +31,7 @@ const PAID_STATES = ['paid', 'cod_paid'];
 
 // Must match the "Footwear" group in src/lib/categories.js.
 // Adding a footwear category there means adding it here too.
-const FOOTWEAR_CATEGORIES = ['ladies-shoes', 'mens-shoes', 'gumboots', 'shoes'];
+const FOOTWEAR_CATEGORIES = ['ladies-shoes', 'mens-shoes', 'school-shoes', 'gumboots', 'shoes'];
 
 // ---------- small helpers ----------
 
