@@ -3,9 +3,17 @@ import Layout from '../layouts/Layout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { fetchProducts } from '../lib/products.js';
 import { phoneE164 } from '../lib/site.js';
+import { liveCategories } from '../lib/categories.js';
 
 const products = await fetchProducts();
-const featured = products.slice(0, 6);
+// One shelf per category that has products, newest products first as stored.
+const shelves = liveCategories(products).map((c) => {
+  const items = products.filter((p) => p.category === c.slug);
+  return { ...c, total: items.length, items: items.slice(0, 4) };
+});
+// Products still on an old category (e.g. legacy 'shoes') are not lost.
+const known = new Set(shelves.map((s) => s.slug));
+const others = products.filter((p) => !known.has(p.category)).slice(0, 4);
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -25,21 +33,21 @@ const structuredData = {
 
 <Layout
   title="Kins Trendy Collections"
-  description="Shop quality kitchen utensils online in Kenya — pots, pans, cutlery, plates and storage. Pay with M-Pesa, delivered across Kenya."
+  description="Shop kitchen utensils, shoes and boots online in Kenya. Pay with M-Pesa, delivered across Kenya."
   structuredData={structuredData}
 >
   <section class="hero">
     <div class="container hero-inner">
       <div class="hero-copy">
-        <h1>Kitchen essentials, sold the way your market stall would sell them — with delivery to your door.</h1>
+        <h1>Everyday essentials for your home and family, delivered to your door.</h1>
         <p>
-          From sufurias to storage jars, Kins Trendy Collections stocks the everyday
-          kitchen items East African households rely on. Order online and pay
-          by M-Pesa.
+          From sufurias and kitchen utensils to shoes, school shoes and boots,
+          Kins Trendy Collections stocks what Kenyan households use every day.
+          Order online and pay by M-Pesa.
         </p>
         <div class="hero-actions">
-          <a href="/category/utensils" class="btn btn-accent">Shop Utensils</a>
-          <a href="#featured" class="btn btn-outline">See What's New</a>
+          <a href="#shop" class="btn btn-accent">Shop by Category</a>
+          <a href="/contact" class="btn btn-outline">Contact Us</a>
         </div>
       </div>
       <div class="hero-art" aria-hidden="true">
@@ -54,23 +62,51 @@ const structuredData = {
     </div>
   </section>
 
-  <section id="featured" class="container featured-section">
-    <h2>Popular right now</h2>
-    <div class="product-grid">
-      {featured.map((p) => (
-        <ProductCard
-          slug={p.slug}
-          name={p.name}
-          price={p.price}
-          compareAtPrice={p.compareAtPrice}
-          currency={p.currency}
-          image={p.images[0]}
-          inStock={p.inStock}
-          category={p.category}
-        />
-      ))}
-    </div>
-  </section>
+  <div id="shop">
+    {shelves.map((shelf) => (
+      <section class="container featured-section" id={shelf.slug}>
+        <div class="shelf-head">
+          <h2>{shelf.label}</h2>
+          <a class="shelf-link" href={`/category/${shelf.slug}`}>
+            View all {shelf.total > 4 ? `(${shelf.total})` : ''} &rarr;
+          </a>
+        </div>
+        <div class="product-grid">
+          {shelf.items.map((p) => (
+            <ProductCard
+              slug={p.slug}
+              name={p.name}
+              price={p.price}
+              compareAtPrice={p.compareAtPrice}
+              currency={p.currency}
+              image={p.images[0]}
+              inStock={p.inStock}
+              category={p.category}
+            />
+          ))}
+        </div>
+      </section>
+    ))}
+    {others.length > 0 && (
+      <section class="container featured-section">
+        <div class="shelf-head"><h2>More products</h2></div>
+        <div class="product-grid">
+          {others.map((p) => (
+            <ProductCard
+              slug={p.slug}
+              name={p.name}
+              price={p.price}
+              compareAtPrice={p.compareAtPrice}
+              currency={p.currency}
+              image={p.images[0]}
+              inStock={p.inStock}
+              category={p.category}
+            />
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
 
   <section class="container trust-strip">
     <div>
@@ -83,7 +119,7 @@ const structuredData = {
     </div>
     <div>
       <h3>Growing every month</h3>
-      <p>Kitchen utensils and shoes today — clothes, electricals and hardware coming next.</p>
+      <p>Kitchen utensils, shoes and boots today. Clothes, electricals and hardware coming next.</p>
     </div>
   </section>
 
@@ -111,7 +147,9 @@ const structuredData = {
   .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
   .hero-art svg { width: 100%; height: auto; max-width: 320px; margin: 0 auto; }
 
-  .featured-section { padding: 56px 20px; }
+  .featured-section { padding: 36px 20px 8px; }
+  .shelf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .shelf-link { color: var(--color-primary); font-weight: 600; white-space: nowrap; }
   .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -123,7 +161,7 @@ const structuredData = {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
-    padding: 0 20px 64px;
+    padding: 48px 20px 64px;
   }
   .trust-strip h3 { font-size: 1.05rem; margin-bottom: 6px; }
   .trust-strip p { color: var(--color-ink-soft); font-size: 0.92rem; margin: 0; }
