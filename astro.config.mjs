@@ -8,6 +8,7 @@ const SITE_URL = 'https://kinstrendycollections.co.ke';
 
 export default defineConfig({
   site: SITE_URL,
-  integrations: [sitemap()],
+  // Search results, the cart and order status pages are for shoppers, not Google.
+  integrations: [sitemap({ filter: (page) => !/\/(search|cart|order)\/?$/.test(page) })],
   output: 'static',
 });

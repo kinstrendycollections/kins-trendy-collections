@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { fetchProducts } from '../lib/products.js';
+import { categoryLabel, menuCategories } from '../lib/categories.js';
+import { hasWhatsApp, whatsappLink } from '../lib/site.js';
+
+// Search works in the shopper's browser: every product is on this page and
+// the script below shows only the ones that match ?q=... in the address.
+// Without JavaScript the page simply shows all products.
+const products = await fetchProducts();
+const categories = menuCategories(products);
+const waBase = hasWhatsApp ? whatsappLink('') : '';
+---
+
+<Layout
+  title="Search"
+  description="Search Kins Trendy Collections for shoes, boots and kitchen utensils."
+  noindex={true}
+>
+  <div class="container search-page" id="search-page" data-wa={waBase}>
+    <h1 id="search-title">All products</h1>
+    <p class="result-count" id="search-count" aria-live="polite"></p>
+
+    <div class="empty-state" id="no-results" hidden>
+      <p id="no-results-text">We could not find a match.</p>
+      <p class="try-cats">
+        Try a category:
+        {categories.map((c, i) => (
+          <>{i > 0 ? ' · ' : ' '}<a href={`/category/${c.slug}`}>{c.label}</a></>
+        ))}
+      </p>
+      <a class="btn btn-accent" id="no-results-wa" href="#" target="_blank" rel="noopener noreferrer" hidden>
+        Ask us on WhatsApp
+      </a>
+    </div>
+
+    <div class="product-grid" id="results-grid">
+      {products.map((p) => (
+        <div
+          class="result"
+          data-name={p.name}
+          data-text={[categoryLabel(p.category), p.shortDescription, p.description, p.sku].filter(Boolean).join(' ')}
+        >
+          <ProductCard
+            slug={p.slug}
+            name={p.name}
+            price={p.price}
+            compareAtPrice={p.compareAtPrice}
+            currency={p.currency}
+            image={p.images?.[0] ?? ''}
+            inStock={p.inStock}
+            category={p.category}
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <script>
+    import '../scripts/cart.js';
+
+    // Lower-case, drop apostrophes and punctuation, and treat "shoes" and
+    // "shoe" as the same word, so "ladies shoe" finds "Ladies' Shoes".
+    function words(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[’']/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w));
+    }
+
+    // A search word matches when a word starts with it ("men" does not match
+    // "women"), or, for words of 4+ letters, when it appears inside a word
+    // ("boot" finds "gumboot").
+    function matches(list, term) {
+      return list.some((w) => w.startsWith(term) || (term.length >= 4 && w.includes(term)));
+    }
+
+    const page = document.getElementById('search-page');
+    const grid = document.getElementById('results-grid');
+    const title = document.getElementById('search-title');
+    const count = document.getElementById('search-count');
+    const noResults = document.getElementById('no-results');
+    const noResultsText = document.getElementById('no-results-text');
+    const waLink = document.getElementById('no-results-wa');
+
+    const q = (new URLSearchParams(location.search).get('q') || '').trim();
+    const terms = words(q);
+    const items = Array.from(grid.querySelectorAll('.result'));
+
+    // Keep what was typed visible in the header search box.
+    const box = document.getElementById('site-search');
+    if (box) box.value = q;
+
+    let shown = items.length;
+
+    if (terms.length > 0) {
+      const scored = items.map((el, index) => {
+        const nameWords = words(el.dataset.name);
+        const textWords = words(el.dataset.text);
+        let score = 0;
+        let ok = true;
+        for (const term of terms) {
+          if (matches(nameWords, term)) score += 3;
+          else if (matches(textWords, term)) score += 1;
+          else { ok = false; break; }
+        }
+        return { el, index, score, ok };
+      });
+
+      // Best matches first; ties keep the original order.
+      scored.sort((a, b) => b.score - a.score || a.index - b.index);
+      shown = 0;
+      for (const s of scored) {
+        s.el.hidden = !s.ok;
+        grid.appendChild(s.el);
+        if (s.ok) shown += 1;
+      }
+
+      title.textContent = 'Results for “' + q + '”';
+      document.title = 'Search: ' + q + ' | Kins Trendy Collections';
+    }
+
+    count.textContent = shown + (shown === 1 ? ' product' : ' products');
+
+    if (terms.length > 0 && shown === 0) {
+      count.textContent = '';
+      noResults.hidden = false;
+      noResultsText.textContent = 'We could not find “' + q + '”. Check the spelling, or try a shorter word such as “shoe” or “boot”.';
+      const wa = page.dataset.wa;
+      if (wa) {
+        waLink.href = wa + '?text=' + encodeURIComponent('Hi Kins Trendy Collections, do you have ' + q + '?');
+        waLink.hidden = false;
+      }
+    }
+  </script>
+</Layout>
+
+<style>
+  .search-page { padding: 32px 20px 64px; }
+  .result-count { color: var(--color-ink-soft); margin-bottom: 20px; min-height: 1.5em; }
+  .empty-state { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius); padding: 28px 20px; margin-bottom: 24px; }
+  .empty-state[hidden], .result[hidden] { display: none; }
+  .empty-state p { color: var(--color-ink-soft); margin: 0 0 14px; }
+  .try-cats a { color: var(--color-primary); font-weight: 600; }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .result { display: flex; flex-direction: column; }
+  .result > :global(.product-card) { flex: 1; }
+</style>
