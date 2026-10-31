@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { fetchProducts } from '../lib/products.js';
-import { phoneE164 } from '../lib/site.js';
+import { SITE, phoneE164 } from '../lib/site.js';
 import { liveCategories } from '../lib/categories.js';
 
 const products = await fetchProducts();
@@ -15,25 +15,27 @@ const shelves = liveCategories(products).map((c) => {
 const known = new Set(shelves.map((s) => s.slug));
 const others = products.filter((p) => !known.has(p.category)).slice(0, 4);
 
+// An online-only store with no public shop address, so no street address is
+// published. It says where it delivers instead.
+const facebook = SITE.facebook.trim();
 const structuredData = {
   '@context': 'https://schema.org',
-  '@type': 'Store',
+  '@type': 'OnlineStore',
   name: 'Kins Trendy Collections',
+  url: new URL('/', Astro.site).toString(),
   description:
-    'Online store selling quality kitchen utensils with delivery across Kenya, plus M-Pesa payment.',
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'Nairobi',
-    addressCountry: 'KE',
-  },
-  priceRange: 'KES 500 - KES 5000',
+    'Online store in Kenya selling ladies\' shoes, men\'s shoes, school shoes, gumboots and safety boots, and kitchen utensils. Delivery across Kenya, pay with M-Pesa.',
+  areaServed: { '@type': 'Country', name: 'Kenya' },
+  currenciesAccepted: 'KES',
+  paymentAccepted: 'M-Pesa',
   ...(phoneE164 ? { telephone: phoneE164 } : {}),
+  ...(facebook ? { sameAs: [facebook] } : {}),
 };
 ---
 
 <Layout
-  title="Kins Trendy Collections"
-  description="Shop kitchen utensils, shoes and boots online in Kenya. Pay with M-Pesa, delivered across Kenya."
+  title="Shoes & Kitchen Utensils Online in Kenya"
+  description="Shop ladies' shoes, men's shoes, school shoes, gumboots and kitchen utensils online. Delivery across Kenya. Pay with M-Pesa. Order on the website or WhatsApp."
   structuredData={structuredData}
 >
   <section class="hero">
@@ -114,7 +116,7 @@ const structuredData = {
       <p>Pay securely with M-Pesa once we confirm your delivery fee.</p>
     </div>
     <div>
-      <h3>Nairobi &amp; beyond</h3>
+      <h3>Delivery across Kenya</h3>
       <p>We deliver to any county in Kenya. Delivery fee is confirmed when you order.</p>
     </div>
     <div>

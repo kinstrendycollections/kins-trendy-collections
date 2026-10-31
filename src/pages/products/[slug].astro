@@ -21,7 +21,7 @@ const related = allProducts
 
 const formatted = new Intl.NumberFormat('en-KE').format(product.price);
 
-const structuredData = {
+const productSchema = {
   '@context': 'https://schema.org',
   '@type': 'Product',
   name: product.name,
@@ -39,6 +39,27 @@ const structuredData = {
     areaServed: 'KE',
   },
 };
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', Astro.site).toString() },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: categoryLabel(product.category),
+      item: new URL(`/category/${product.category}`, Astro.site).toString(),
+    },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      name: product.name,
+      item: new URL(`/products/${product.slug}`, Astro.site).toString(),
+    },
+  ],
+};
+const structuredData = [productSchema, breadcrumbSchema];
 
 const productUrl = new URL(`/products/${product.slug}`, Astro.site).toString();
 const isFootwear = categoryGroup(product.category) === 'Footwear';

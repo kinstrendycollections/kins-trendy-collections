@@ -14,7 +14,10 @@ export const SITE = {
   whatsapp: '',
   email: '',
   hours: '',
-  serviceArea: 'Nairobi and delivery across Kenya',
+  serviceArea: 'We deliver to every county in Kenya',
+  // Social pages. Leave '' until the page is ready; empty ones are hidden.
+  // facebook: the full page address, e.g. 'https://www.facebook.com/yourpagename'
+  facebook: '',
 };
 
 // Address of the payments and orders Worker (Cloudflare project kins-payments).

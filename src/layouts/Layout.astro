@@ -8,7 +8,7 @@ interface Props {
   title: string;
   description: string;
   image?: string;
-  structuredData?: Record<string, any>;
+  structuredData?: Record<string, any> | Record<string, any>[];
   noindex?: boolean;
   whatsappMessage?: string;
 }
@@ -16,7 +16,7 @@ interface Props {
 const {
   title,
   description,
-  image = '/images/og-default.svg',
+  image = '/images/og-default.png',
   structuredData,
   noindex = false,
   whatsappMessage,
@@ -25,6 +25,9 @@ const {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const siteName = 'Kins Trendy Collections';
 const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+const schemaBlocks = structuredData
+  ? Array.isArray(structuredData) ? structuredData : [structuredData]
+  : [];
 ---
 
 <!doctype html>
@@ -62,9 +65,11 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap"
     />
 
-    {structuredData && (
-      <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
-    )}
+    <meta name="theme-color" content="#1B4B66" />
+
+    {schemaBlocks.map((block) => (
+      <script type="application/ld+json" set:html={JSON.stringify(block)} />
+    ))}
   </head>
   <body>
     <Header />

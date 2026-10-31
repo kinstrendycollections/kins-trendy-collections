@@ -1,12 +1,13 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
-// IMPORTANT: replace with your real domain once you buy it (e.g. https://kinstrendy.co.ke)
-// This is used to generate correct canonical URLs, sitemap.xml and Open Graph tags.
-const SITE_URL = 'https://kinstrendy.pages.dev';
+// The live address of the store. It is used for canonical URLs, sitemap.xml,
+// Open Graph tags and product structured data. Must match the real domain,
+// with no slash at the end.
+const SITE_URL = 'https://kinstrendycollections.co.ke';
 
 export default defineConfig({
   site: SITE_URL,
   integrations: [sitemap()],
   output: 'static',
-}); 
+});

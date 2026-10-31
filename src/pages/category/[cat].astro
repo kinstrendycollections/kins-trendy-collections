@@ -30,17 +30,28 @@ const related = group
   ? menuCategories(products).filter((c) => c.group === group && c.slug !== cat)
   : [];
 
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: `${label} — Kins Trendy Collections`,
-  description: `Shop ${label.toLowerCase()} online with delivery across Kenya. Pay with M-Pesa.`,
-};
+const base = Astro.site;
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} — Kins Trendy Collections`,
+    description: `Shop ${label.toLowerCase()} online with delivery across Kenya. Pay with M-Pesa.`,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', base).toString() },
+      { '@type': 'ListItem', position: 2, name: label, item: new URL(`/category/${cat}`, base).toString() },
+    ],
+  },
+];
 ---
 
 <Layout
-  title={label}
-  description={`Buy ${label.toLowerCase()} online in Kenya. Delivered across Kenya, pay with M-Pesa.`}
+  title={`${label} Online in Kenya`}
+  description={`Buy ${label.toLowerCase()} online in Kenya. Delivery across Kenya, pay with M-Pesa. Order on the website or WhatsApp.`}
   structuredData={structuredData}
   noindex={items.length === 0}
 >

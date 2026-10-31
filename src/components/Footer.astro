@@ -21,9 +21,12 @@ const hasContactLines = hasPhone || hasWhatsApp || email || hours;
     <div>
       <h3>Kins Trendy Collections</h3>
       <p>
-        Kitchen utensils, shoes and more, delivered across Nairobi and
-        beyond, with secure M-Pesa payment.
+        Shoes, boots and kitchen utensils, delivered across Kenya, with
+        secure M-Pesa payment.
       </p>
+      {SITE.facebook.trim() && (
+        <p><a href={SITE.facebook.trim()} target="_blank" rel="noopener noreferrer">Follow us on Facebook</a></p>
+      )}
     </div>
 
     <div>
@@ -68,7 +71,7 @@ const hasContactLines = hasPhone || hasWhatsApp || email || hours;
   </div>
 
   <div class="container footer-bottom">
-    <p>&copy; {new Date().getFullYear()} Kins Trendy Collections. All rights reserved. Nairobi, Kenya.</p>
+    <p>&copy; {new Date().getFullYear()} Kins Trendy Collections. All rights reserved. Kenya.</p>
   </div>
 </footer>
 
